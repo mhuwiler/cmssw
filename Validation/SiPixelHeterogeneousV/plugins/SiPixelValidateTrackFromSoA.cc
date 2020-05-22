@@ -42,7 +42,7 @@ private:
 SiPixelValidateTrackFromSoA::SiPixelValidateTrackFromSoA(const edm::ParameterSet& iConfig)
     : tracksoaToken_(consumes<PixelTrackHeterogeneous>(iConfig.getParameter<edm::InputTag>("src")))
 {
-  topFolderName_ = "SiPixelHeterogenousV/PixelTracksSoA";
+  topFolderName_ = "SiPixelHeterogeneousV/PixelTracksSoA";
 }
 
 void SiPixelValidateTrackFromSoA::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const& run , edm::EventSetup const& es) {
