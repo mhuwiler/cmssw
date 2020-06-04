@@ -40,7 +40,7 @@ private:
   
   edm::EDGetTokenT<ZVertexHeterogeneous> tokenvertexsoa_;
   edm::EDGetTokenT<reco::BeamSpot> tokenbeamSpot_;
-  edm::EDGetTokenT<reco::TrackCollection> tokenTracks_;  
+  edm::EDGetTokenT<PixelTrackHeterogeneous> tokenTracks_;  
 
   std::string topFolderName_;
   MonitorElement* hnVertices;
@@ -49,12 +49,15 @@ private:
   MonitorElement* hvz;
   MonitorElement* ndof; 
   MonitorElement* chi2; 
+  MonitorElement* ntracks; 
+  MonitorElement* trackQuality; 
+  MonitorElement* associatedTrack; 
 };
 
 SiPixelValidateVerticesFromSoA::SiPixelValidateVerticesFromSoA(const edm::ParameterSet& iConfig)
     : tokenvertexsoa_(consumes<ZVertexHeterogeneous>(iConfig.getParameter<edm::InputTag>("src"))),
       tokenbeamSpot_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpotsrc"))),
-      tokenTracks_(consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("trackCollectionsrc")))
+      tokenTracks_(consumes<PixelTrackHeterogeneous>(iConfig.getParameter<edm::InputTag>("trackCollectionsrc")))
 {
   topFolderName_ = "SiPixelHeterogeneousV/PixelVerticesSoA";
 }
@@ -66,8 +69,11 @@ void SiPixelValidateVerticesFromSoA::bookHistograms(DQMStore::IBooker& ibooker, 
   hvx = ibooker.book1D("vertex_xpos", ";xPos;", 500, -0.5, 0.5);
   hvy = ibooker.book1D("vertex_ypos", ";yPos;", 500, -0.5, 0.5);
   hvz = ibooker.book1D("vertex_zpos", ";zPos;", 500, -20., 20.);
-  ndof = ibooker.book1D("ndof", ";ndof", 41, -0.5, 40.5);
-  chi2 = ibooker.book1D("chi2", ";chi2", 31, -0.5, 30.5); 
+  ndof = ibooker.book1D("ndof", ";ndof;", 41, -0.5, 40.5);
+  chi2 = ibooker.book1D("chi2", ";chi2;", 31, -0.5, 30.5); 
+  ntracks = ibooker.book1D("ntracks", ";#of tracks;", 101, -0.5, 199.5); 
+  trackQuality = ibooker.book1D("trackQuality", ";Track quality;", 5, -0.5, 5.5); 
+  associatedTrack = ibooker.book1D("associated tracks", ";track associated;", 100, -0.5, 99.5); 
 
 }
 
@@ -104,6 +110,31 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
     ndof->Fill(vertexsoa.ndof[i]); 
     chi2->Fill(vertexsoa.chi2[i]); 
   }
+
+  const auto& tracksoa = *(iEvent.get(tokenTracks_)); 
+  const auto *quality = tracksoa.qualityData(); 
+
+  unsigned int nt = tracksoa.stride(); 
+  if (nt > vertexsoa.MAXTRACKS) return; 
+
+  Int_t goodTracks = 0; 
+
+  for (unsigned int i=0; i<nt; i++) 
+  {
+    auto nHits = tracksoa.nHits(i); 
+    if (nHits==0) break; 
+    if (quality[i] > trackQuality::loose) 
+    {
+      goodTracks += 1; 
+    }
+    trackQuality->Fill(quality[i]); 
+
+    associatedTrack->Fill(vertexsoa.idv[i]); 
+
+  }
+
+  ntracks->Fill(nt); 
+
 }
 
 void SiPixelValidateVerticesFromSoA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
