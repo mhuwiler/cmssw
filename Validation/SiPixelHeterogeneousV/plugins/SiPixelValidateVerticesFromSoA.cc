@@ -43,12 +43,14 @@ private:
   edm::EDGetTokenT<PixelTrackHeterogeneous> tokenTracks_;  
 
   std::string topFolderName_;
+  
   MonitorElement* hnVertices;
   MonitorElement* hvx;
   MonitorElement* hvy;
   MonitorElement* hvz;
   MonitorElement* ndof; 
   MonitorElement* chi2; 
+
   MonitorElement* ntracks; 
   MonitorElement* trackQuality; 
   MonitorElement* associatedTrack; 
@@ -138,8 +140,6 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
   for (uint32_t i=0; i<maxNumTracks; i++) 
   {
     auto nHits = tracksoa.nHits(i); 
-    std::cout << i << ", MaxnTracks: " << maxNumTracks << std::endl; 
-    std::cout << "nHits: " << nHits << std::endl; 
     if (nHits==0) break; // Since we are looping over the size of the soa, we need to escape at the point where the elements are no longer used. 
     auto qual = quality[i]; 
 
@@ -154,10 +154,7 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
     {
       nTkGood++; 
       trackQualityPass->Fill(qual); 
-    }
-    
-    std::cout << "quality: " << qual << std::endl; 
-    
+    }    
 
     if (qual == trackQuality::loose)  
     {
