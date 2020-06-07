@@ -52,11 +52,13 @@ private:
   MonitorElement* ntracks; 
   MonitorElement* trackQuality; 
   MonitorElement* associatedTrack; 
+  MonitorElement* trackQualityPass; 
 };
 
 SiPixelValidateVerticesFromSoA::SiPixelValidateVerticesFromSoA(const edm::ParameterSet& iConfig)
     : tokenvertexsoa_(consumes<ZVertexHeterogeneous>(iConfig.getParameter<edm::InputTag>("src"))),
       tokenbeamSpot_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpotsrc"))),
+      //tokenIndToEdm_(consumes<IndToEdm>(conf.getParameter<edm::InputTag>("TrackCollectionsrc"))), 
       tokenTracks_(consumes<PixelTrackHeterogeneous>(iConfig.getParameter<edm::InputTag>("trackCollectionsrc")))
 {
   topFolderName_ = "SiPixelHeterogeneousV/PixelVerticesSoA";
@@ -72,14 +74,18 @@ void SiPixelValidateVerticesFromSoA::bookHistograms(DQMStore::IBooker& ibooker, 
   ndof = ibooker.book1D("ndof", ";ndof;", 41, -0.5, 40.5);
   chi2 = ibooker.book1D("chi2", ";chi2;", 31, -0.5, 30.5); 
   ntracks = ibooker.book1D("ntracks", ";#of tracks;", 101, -0.5, 199.5); 
-  trackQuality = ibooker.book1D("trackQuality", ";Track quality;", 5, -0.5, 5.5); 
-  associatedTrack = ibooker.book1D("associated tracks", ";track associated;", 100, -0.5, 99.5); 
+  trackQuality = ibooker.book1D("trackQuality", ";Track quality;", 6, -0.5, 5.5); 
+  associatedTrack = ibooker.book1D("associated tracks", ";track associated;", 100, -1.5, 98.5); 
+  trackQualityPass = ibooker.book1D("trackQualityPass", ";Quality of tracks passing the threshold;", 6, -0.5, 5.5); 
 
 }
 
 void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::EventSetup const& es) {
   
   const auto& vertexsoa = *(iEvent.get(tokenvertexsoa_).get());
+
+  assert(&vertexsoa); 
+
   auto nv = vertexsoa.nvFinal;
   if(nv > vertexsoa.MAXVTX)   return;
   hnVertices->Fill(nv);
@@ -114,26 +120,72 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
   const auto& tracksoa = *(iEvent.get(tokenTracks_)); 
   const auto *quality = tracksoa.qualityData(); 
 
-  unsigned int nt = tracksoa.stride(); 
-  if (nt > vertexsoa.MAXTRACKS) return; 
+  assert(&tracksoa); 
 
-  Int_t goodTracks = 0; 
+  uint32_t maxNumTracks = tracksoa.stride(); // This is the dimension of the soas, not the actual number of tracks. We iterate over them and break the loop if nHits is 0 (index no longer used). 
+  
+  //if (maxNumTracks > vertexsoa.MAXTRACKS) 
+  //{
+  //  std::cerr << "The maximum number of tracks exceeds the maximum number of tracks in the vertex. " << std::endl; 
+  //  return;
+  //} 
 
-  for (unsigned int i=0; i<nt; i++) 
+  uint32_t nTk = 0; // Total number of tracks assiciated with the vertex. 
+  uint32_t nTkLoose = 0; // Number of tracks with quality 'loose'. 
+  uint32_t nTkGood = 0; // Number of good tracks (with quality higher than qualityThreshold)
+  auto tkQualityThres = trackQuality::loose; // Quality above which (included) the track is considered of good quality. 
+
+  for (uint32_t i=0; i<maxNumTracks; i++) 
   {
     auto nHits = tracksoa.nHits(i); 
-    if (nHits==0) break; 
-    if (quality[i] > trackQuality::loose) 
-    {
-      goodTracks += 1; 
-    }
-    trackQuality->Fill(quality[i]); 
+    std::cout << i << ", MaxnTracks: " << maxNumTracks << std::endl; 
+    std::cout << "nHits: " << nHits << std::endl; 
+    if (nHits==0) break; // Since we are looping over the size of the soa, we need to escape at the point where the elements are no longer used. 
+    auto qual = quality[i]; 
 
+    // Filling histograms
     associatedTrack->Fill(vertexsoa.idv[i]); 
+    trackQuality->Fill(qual); 
+
+    // Making stats 
+    nTk++;
+
+    if (qual >= tkQualityThres) 
+    {
+      nTkGood++; 
+      trackQualityPass->Fill(qual); 
+    }
+    
+    std::cout << "quality: " << qual << std::endl; 
+    
+
+    if (qual == trackQuality::loose)  
+    {
+      nTkLoose++;
+    }
 
   }
 
-  ntracks->Fill(nt); 
+  // copied from SiPixelValidateTrackFromSoA
+  //const auto&  soatracks = *(iEvent.get(tracksoaToken_)); 
+  //const auto *quality = soatracks.qualityData();
+  //uint32_t nTk = 0;
+  //uint32_t nTkLoose = 0;
+
+  //for (int32_t it = 0; it < tracksoa.stride(); ++it) {
+  //  auto nHits = tracksoa.nHits(it);
+  //  if (nHits == 0)  break;
+  //  nTk++;
+  //  auto q = quality[it];
+  //  if (q != trackQuality::loose)  continue;
+  //  nTkLoose++;
+  //}
+
+  std::cout << "Num tracks: " << nTk << ", (out of max number: " << maxNumTracks << "), thereof good tracks: " << nTkGood 
+    << ", N loose tracks: " << nTkLoose 
+    << std::endl; 
+
+  ntracks->Fill(nTk); 
 
 }
 
