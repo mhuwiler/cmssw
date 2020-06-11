@@ -50,12 +50,23 @@ private:
   MonitorElement* hvz;
   MonitorElement* ndof; 
   MonitorElement* chi2; 
+  MonitorElement* pt2; 
+  MonitorElement* wv; 
+  MonitorElement* chi2ndof; 
+  MonitorElement* tracksumPt2; 
+  MonitorElement* ptvsNtracks; 
 
   MonitorElement* ntracks; 
   MonitorElement* trackQuality; 
   MonitorElement* associatedTrack; 
   MonitorElement* trackQualityPass; 
   MonitorElement* trackPt; 
+  MonitorElement* trackEta; 
+  MonitorElement* trackPhi; 
+  MonitorElement* trackCharge; 
+  MonitorElement* trackZip; 
+  MonitorElement* trackTip; 
+ 
 };
 
 SiPixelValidateVerticesFromSoA::SiPixelValidateVerticesFromSoA(const edm::ParameterSet& iConfig)
@@ -71,16 +82,27 @@ void SiPixelValidateVerticesFromSoA::bookHistograms(DQMStore::IBooker& ibooker, 
   ibooker.cd();
   ibooker.setCurrentFolder(topFolderName_);
   hnVertices = ibooker.book1D("nVerticesgpu", ";#of vertices;", 150, -0.5, 149.5);
-  hvx = ibooker.book1D("vertex_xpos", ";xPos;", 500, -0.5, 0.5);
-  hvy = ibooker.book1D("vertex_ypos", ";yPos;", 500, -0.5, 0.5);
-  hvz = ibooker.book1D("vertex_zpos", ";zPos;", 500, -20., 20.);
-  ndof = ibooker.book1D("ndof", ";ndof;", 41, -0.5, 40.5);
-  chi2 = ibooker.book1D("chi2", ";chi2;", 31, -0.5, 30.5); 
+  hvx = ibooker.book1D("vertex_xpos", ";xPos;", 100, -0.5, 0.5);
+  hvy = ibooker.book1D("vertex_ypos", ";yPos;", 10, -0.5, 0.5);
+  hvz = ibooker.book1D("vertex_zpos", ";zPos;", 10, -20., 20.);
+  ndof = ibooker.book1D("ndof", ";ndof;", 171, -0.5, 170.5);
+  chi2 = ibooker.book1D("chi2", ";chi2;", 100, -0.5, 1.5); 
+  pt2 = ibooker.book1D("pt2", ";p_{T}^{2} of tracks forming vertex;", 450, -0.5, 4499.5); 
+  wv = ibooker.book1D("wv", ";Output weight (1/error^2 on z position) of vertex;", 100, -0.5, 1.5); 
   ntracks = ibooker.book1D("ntracks", ";#of tracks;", 101, -0.5, 199.5); 
   trackQuality = ibooker.book1D("trackQuality", ";Track quality;", 6, -0.5, 5.5); 
   associatedTrack = ibooker.book1D("associated tracks", ";track associated;", 100, -1.5, 98.5); 
   trackQualityPass = ibooker.book1D("trackQualityPass", ";Quality of tracks passing the threshold;", 6, -0.5, 5.5); 
   trackPt = ibooker.book1D("trackPt", ";p_T of tracks associated with vertices;", 700, -0.5, 700.5); 
+  trackCharge = ibooker.book1D("trackCharge", ";Charge of the track;", 5, -2.5, 2.5); 
+  trackZip = ibooker.book1D("trackZip", ";ZIP of tracks;", 19, -9.5, 9.5); 
+  trackTip = ibooker.book1D("trackTip", ";TIP of tracks;", 21, -10.5, 10.5); 
+  trackEta = ibooker.book1D("trackEta", ";#eta of the tracks;", 11, -5.5, 5.5);
+  trackPhi = ibooker.book1D("trackPhi", ";#phi of the tracks;", 7, -3.5, 3.5);  
+  chi2ndof = ibooker.book1D("chi2ndof", ";#chi2/ndof per vertex;", 100, -0.5, 99.5); 
+  tracksumPt2 = ibooker.book1D("tracksumPt2", ";Sum of p_{T} per vertex;", 450, -0.5, 4499.5); 
+  ptvsNtracks = ibooker.book2D("ptvsNtracks", "Pt^2 as function of the number of tracks;# of tracks per vertex;p_{T}^{2}", 101, -0.5, 199.5, 1500, -0.5, 1499.5); 
+
 
 }
 
@@ -127,6 +149,15 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
     hvz->Fill(z);
     ndof->Fill(vertexsoa.ndof[i]); 
     chi2->Fill(vertexsoa.chi2[i]); 
+    pt2->Fill(vertexsoa.ptv2[i]); 
+    wv->Fill(1./static_cast<Double_t>(vertexsoa.wv[i])); 
+    if (vertexsoa.ndof[i]>0) 
+    {
+      chi2ndof->Fill(static_cast<Double_t>(vertexsoa.chi2[i])/static_cast<Double_t>(vertexsoa.ndof[i])); 
+    }
+
+
+    Double_t sumPt2 = 0; 
 
     // Start accesing the tracks 
     uint32_t nTk = 0; // Total number of tracks assiciated with the vertex. 
@@ -139,20 +170,26 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
       auto nHits = tracksoa.nHits(iTk); 
       if (nHits==0) break; // Since we are looping over the size of the soa, we need to escape at the point where the elements are no longer used. 
       auto qual = quality[iTk];   
-
-      // Filling histograms
       
 
-      if (vertexsoa.idv[iTk] == vertexsoa.sortInd[i]) 
+      if (vertexsoa.idv[iTk] == vertexsoa.sortInd[i]) // The track is associated with this vertex 
       {
-        // The track is associated with this vertex 
         
+        
+        // Filling histograms
         associatedTrack->Fill(vertexsoa.idv[iTk]); 
         trackQuality->Fill(qual);   
         trackPt->Fill(tracksoa.pt(iTk)); 
+        trackEta->Fill(tracksoa.eta(iTk)); 
+        trackPhi->Fill(tracksoa.phi(iTk)); 
+        trackCharge->Fill(tracksoa.charge(iTk)); 
+        trackZip->Fill(tracksoa.zip(iTk));
+        trackTip->Fill(tracksoa.tip(iTk)); 
 
         // Making stats 
         nTk++;    
+
+        sumPt2 += tracksoa.pt(iTk)*tracksoa.pt(iTk); 
 
         if (qual >= tkQualityThres) 
         {
@@ -178,7 +215,11 @@ void SiPixelValidateVerticesFromSoA::analyze(const edm::Event& iEvent, edm::Even
       << ", N loose tracks: " << nTkLoose 
       << std::endl;   
 
-    ntracks->Fill(nTk);   
+    ntracks->Fill(nTk);  
+
+    tracksumPt2->Fill(sumPt2);  
+
+    ptvsNtracks->Fill(nTk, vertexsoa.ptv2[i]); 
 
 
   }
