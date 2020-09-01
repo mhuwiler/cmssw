@@ -74,8 +74,9 @@ struct DetHisto {
 class DetAnalyzer {
 public:
   
-  DetAnalyzer(bool plotdethisto) {
+  DetAnalyzer(bool plotdethisto, bool configVerbose = false) {
     fillHistosFordet_ = plotdethisto;
+    verbose = configVerbose; 
     if(!fillHistosFordet_)  std::cout << "Per det Histos will not be booked\n";
   }
   ~DetAnalyzer() {}
@@ -107,6 +108,25 @@ public:
   bool compareDigi(int g_row, int g_col, int c_row, int c_col) {
     if(g_row == c_row && g_col == c_col)  return true;
     return false;
+  }
+
+  bool compareCluster(float gpux, float gpuy, int gpuSizex, int gpuSizey, int gpuminRow, int gpumaxRow, int gpuminCol, int gpumaxCol, float cpux, float cpuy, int cpuSizex, int cpuSizey, int cpuminRow, int cpumaxRow, int cpuminCol, int cpumaxCol) 
+  {
+    bool xmatch = (gpux == cpux); 
+    bool ymatch = (gpux == cpux); 
+    bool ysizematch = (gpuSizey == cpuSizey); 
+    bool xsizematch = (gpuSizex == cpuSizex); 
+    bool minrowmatch = (gpuminRow == cpuminRow); 
+    bool maxrowmatch = (gpumaxRow == cpumaxRow); 
+    bool mincolmatch = (gpuminCol == cpuminCol); 
+    bool maxcolmatch = (gpumaxCol == cpumaxCol); 
+    int generalmatching = xmatch + ymatch + xsizematch + ysizematch + minrowmatch + maxrowmatch + mincolmatch + maxcolmatch; 
+    bool sizematching = (xsizematch and ysizematch and minrowmatch and maxrowmatch and mincolmatch and maxcolmatch); 
+    bool allmatch = (generalmatching == 8); 
+    if (verbose && (generalmatching != 8) && (generalmatching > 4)) std::cout << TString::Format("generalmatching: %i, gpu x: %f, cpu x: %f, gpu y: %f, cpu y: %f, gpu size x: %i, cpu size x: %i, gpu size y: %i, cpu size y: %i, gpu min row: %i, cpu min row: %i, gpu max row: %i, cpu max row: %i, gpu min column: %i, cpu min column: %i, gpu max column: %i, cpu max column: %i", generalmatching, gpux, cpux, gpuy, cpuy, gpuSizex, cpuSizex, gpuSizey, cpuSizey, gpuminRow, cpuminRow, gpumaxRow, cpumaxRow, gpuminCol, cpuminCol, gpumaxCol, cpumaxCol) << std::endl; 
+
+
+    return (generalmatching == 8); 
   }
   
   void bookGlobalHistos() {
@@ -142,12 +162,14 @@ public:
     hncls->Fill(gpuinfo.ncluster, cpuinfo.ncluster);
     hndigis->Fill(gpuinfo.ndigi, cpuinfo.ndigi);
     hnrechits->Fill(gpuinfo.nrechit, cpuinfo.nrechit);
-    if(fillHistosFordet_) { 
+    if(fillHistosFordet_) 
+    { 
       histomap_[rawid].hnrechits->Fill(gpuinfo.nrechit, cpuinfo.nrechit);
       histomap_[rawid].hndigis->Fill(gpuinfo.ndigi, cpuinfo.ndigi);
       histomap_[rawid].hncls->Fill(gpuinfo.ncluster, cpuinfo.ncluster);
     }
-    for(unsigned int gi = 0; gi < gpuinfo.ncluster; gi++) {
+    for(unsigned int gi = 0; gi < gpuinfo.ncluster; gi++) 
+    {
       auto g_charge = gpuinfo.cluster_charge[gi];
       auto g_sizeX = gpuinfo.cluster_sizeX[gi];
       auto g_sizeY = gpuinfo.cluster_sizeY[gi];
@@ -157,24 +179,41 @@ public:
       auto g_maxPixelRow = gpuinfo.cluster_maxPixelRow[gi];
       auto g_minPixelCol = gpuinfo.cluster_minPixelCol[gi];
       auto g_maxPixelCol = gpuinfo.cluster_maxPixelCol[gi];
+      //auto g_x = gpuinfo.cluster_x.at(gi); 
+      //auto g_y = gpuinfo.cluster_y.at(gi); 
+      //auto g_sizex = gpuinfo.cluster_sizeX.at(gi); 
+      //auto g_sizey = gpuinfo.cluster_sizeY.at(gi); 
+      //auto g_rowmax = gpuinfo.cluster_maxPixelRow.at(gi);
+      //auto g_rowmin = gpuinfo.cluster_minPixelRow.at(gi);
+      //auto g_colmax = gpuinfo.cluster_maxPixelCol.at(gi);
+      //auto g_colmax = gpuinfo.cluster_minPixelCol.at(gi);
       bool matched = false;
-      for(unsigned int ci = 0; ci < cpuinfo.ncluster; ci++) {
+      for(unsigned int ci = 0; ci < cpuinfo.ncluster; ci++) 
+      {
         auto c_charge = cpuinfo.cluster_charge[ci];
- 	auto c_sizeX = cpuinfo.cluster_sizeX[ci];
- 	auto c_sizeY = cpuinfo.cluster_sizeY[ci];
- 	auto c_x = cpuinfo.cluster_x[ci];
- 	auto c_y = cpuinfo.cluster_y[ci];
- 	auto c_minPixelRow = cpuinfo.cluster_minPixelRow[ci];
- 	auto c_maxPixelRow = cpuinfo.cluster_maxPixelRow[ci];
- 	auto c_minPixelCol = cpuinfo.cluster_minPixelCol[ci];
- 	auto c_maxPixelCol = cpuinfo.cluster_maxPixelCol[ci];
-	//define some matching condition
-        if(fillHistosFordet_) {
-	  histomap_[rawid].hclscharge->Fill(g_charge, c_charge);
-	  histomap_[rawid].hclsSizex->Fill(g_sizeX, c_sizeX);
-          histomap_[rawid].hclsSizey->Fill(g_sizeY, c_sizeY);
+        auto c_sizeX = cpuinfo.cluster_sizeX[ci];
+        auto c_sizeY = cpuinfo.cluster_sizeY[ci];
+        auto c_x = cpuinfo.cluster_x[ci];
+        auto c_y = cpuinfo.cluster_y[ci];
+        auto c_minPixelRow = cpuinfo.cluster_minPixelRow[ci];
+        auto c_maxPixelRow = cpuinfo.cluster_maxPixelRow[ci];
+        auto c_minPixelCol = cpuinfo.cluster_minPixelCol[ci];
+        auto c_maxPixelCol = cpuinfo.cluster_maxPixelCol[ci];
+	     //define some matching condition
+        if (compareCluster(g_x, g_y, g_sizeX, g_sizeY, g_minPixelRow, g_maxPixelRow, g_minPixelCol, g_maxPixelCol, c_x, c_y, c_sizeX, c_sizeY, c_minPixelRow, c_maxPixelRow, c_minPixelCol, c_maxPixelCol)) 
+        {
+          // Fill histos 
+          std::cout << "The x position between gpu and cpu reconstruction match!" << std::endl; 
+
+
+          if(fillHistosFordet_) 
+          {
+            histomap_[rawid].hclscharge->Fill(g_charge, c_charge);
+            histomap_[rawid].hclsSizex->Fill(g_sizeX, c_sizeX);
+            histomap_[rawid].hclsSizey->Fill(g_sizeY, c_sizeY);
+          }
         }
-	hclscharge->Fill(g_charge, c_charge);
+        hclscharge->Fill(g_charge, c_charge);
         hclsSizex->Fill(g_sizeX, c_sizeX);
         hclsSizey->Fill(g_sizeX, c_sizeY);
 
@@ -185,37 +224,44 @@ public:
     
     std::vector<bool> isCPUdigimathed(cpuinfo.ndigi, false);
 
-    for(unsigned int gi = 0; gi < gpuinfo.ndigi; gi++) {
-          auto g_row = gpuinfo.digi_row[gi];
-          auto g_col = gpuinfo.digi_col[gi];
-          auto g_adc = gpuinfo.digi_adc[gi];
-	  bool matched = false;
-          for(unsigned int ci = 0; ci < cpuinfo.ndigi; ci++) {
-            auto c_row = cpuinfo.digi_row[ci];
-            auto c_col = cpuinfo.digi_col[ci];
-            auto c_adc = cpuinfo.digi_adc[ci];
-            if(compareDigi(g_row, g_col, c_row, c_col) ) {
-	      hdigiadc->Fill(g_adc, c_adc);
-	      hdigicol->Fill(g_col, c_col);
-	      hdigirow->Fill(g_row, c_row);
-              if(fillHistosFordet_) {
-	        histomap_[rawid].hdigiadc->Fill(g_adc, c_adc);
-	        histomap_[rawid].hdigirow->Fill(g_row, c_row);
-	        histomap_[rawid].hdigicol->Fill(g_col, c_col);
-              }
-	      matched=true;
-              isCPUdigimathed[ci] = true;
+    for(unsigned int gi = 0; gi < gpuinfo.ndigi; gi++) 
+    {
+      auto g_row = gpuinfo.digi_row[gi];
+      auto g_col = gpuinfo.digi_col[gi];
+      auto g_adc = gpuinfo.digi_adc[gi];
+      bool matched = false;
+      for(unsigned int ci = 0; ci < cpuinfo.ndigi; ci++) 
+      {
+        auto c_row = cpuinfo.digi_row[ci];
+        auto c_col = cpuinfo.digi_col[ci];
+        auto c_adc = cpuinfo.digi_adc[ci];
+        if(compareDigi(g_row, g_col, c_row, c_col) ) 
+        {
+          hdigiadc->Fill(g_adc, c_adc);
+          hdigicol->Fill(g_col, c_col);
+          hdigirow->Fill(g_row, c_row);
+          if(fillHistosFordet_) 
+          {
+            histomap_[rawid].hdigiadc->Fill(g_adc, c_adc);
+            histomap_[rawid].hdigirow->Fill(g_row, c_row);
+            histomap_[rawid].hdigicol->Fill(g_col, c_col);
+          }
+          matched=true;
+          isCPUdigimathed[ci] = true;
 	      //break;
-	    }      
-          }//loop over cpu digis
-	  if(!matched) {
-	    hdigiadc_gUM->Fill(g_adc);
-	    hdigirow_gUM->Fill(g_row);
-	    hdigicol_gUM->Fill(g_col);
-	  }
+        }      
+      }//loop over cpu digis
+      if(!matched) 
+      {
+        hdigiadc_gUM->Fill(g_adc);
+        hdigirow_gUM->Fill(g_row);
+        hdigicol_gUM->Fill(g_col);
+      }
     }//end loop over gpu digis
+
     //Fill histos for unmatched legacy digis
-    for(unsigned int ci = 0; ci <  isCPUdigimathed.size(); ci ++) {
+    for(unsigned int ci = 0; ci <  isCPUdigimathed.size(); ci ++) 
+    {
       if(isCPUdigimathed[ci])  continue;
       hdigiadc_cUM->Fill(cpuinfo.digi_adc[ci]);
       hdigirow_cUM->Fill(cpuinfo.digi_row[ci]);
@@ -223,23 +269,26 @@ public:
     }
     
     //if(jentry==724) std::cout << "#nrechits gpu:" << gpuinfo.nrechit << "\t gpu=" << gpuinfo.rechit_x.size() << std::endl;
-    for(unsigned int gi = 0; gi < gpuinfo.rechit_x.size(); gi++) {
+    for(unsigned int gi = 0; gi < gpuinfo.rechit_x.size(); gi++) 
+    {
       double g_x = gpuinfo.rechit_x[gi];
       double g_y = gpuinfo.rechit_y[gi];
       double g_xerr = gpuinfo.rechit_xerror[gi];
       double g_yerr = gpuinfo.rechit_yerror[gi];
-      for(unsigned int ci = 0; ci <  cpuinfo.rechit_x.size(); ci++) {
+      for(unsigned int ci = 0; ci <  cpuinfo.rechit_x.size(); ci++) 
+      {
         double c_x = cpuinfo.rechit_x[ci];
         double c_y = cpuinfo.rechit_y[ci];
         double c_xerr = cpuinfo.rechit_xerror[ci];
         double c_yerr = cpuinfo.rechit_yerror[ci];
-	hrechitxRes->Fill(g_x - c_x);
-	hrechityRes->Fill(g_y - c_y);
+        hrechitxRes->Fill(g_x - c_x);
+        hrechityRes->Fill(g_y - c_y);
         hrechitxerrRes->Fill(g_xerr - c_xerr);
         hrechityerrRes->Fill(g_yerr - c_yerr);
-        if(fillHistosFordet_) {
- 	  histomap_[rawid].hrechitxRes->Fill(g_x - c_x);
-	  histomap_[rawid].hrechityRes->Fill(g_y - c_y);
+        if(fillHistosFordet_) 
+        {
+          histomap_[rawid].hrechitxRes->Fill(g_x - c_x);
+          histomap_[rawid].hrechityRes->Fill(g_y - c_y);
           histomap_[rawid].hrechitxerrRes->Fill(g_xerr - c_xerr);
           histomap_[rawid].hrechityerrRes->Fill(g_yerr - c_yerr);
         }
@@ -296,7 +345,7 @@ public:
 
 
   void writeHistos() {
-    TFile* fout = TFile::Open("comparison.root", "recreate");
+    TFile* fout = TFile::Open("output/comparison.root", "recreate");
     fout->mkdir("cluster");
     fout->cd("cluster");
     hclscharge->Write();
@@ -358,6 +407,7 @@ private:
   std::map<unsigned int, DetInfo>* cpudetmap_;
   
   bool fillHistosFordet_;
+  bool verbose; 
 
   TH2D* hclscharge;
   TH2D* hclsSizex;
@@ -385,9 +435,9 @@ private:
 };
 
 int main() {
-  DetAnalyzer dt(0);
-  dt.getTree("gpu_input.root", 1);
-  dt.getTree("legacy_input.root", 0);
+  DetAnalyzer dt(0, true);
+  dt.getTree("input/gpu_input.root", 1);
+  dt.getTree("input/legacy_input.root", 0);
   dt.Loop();
   dt.writeHistos();
 }
