@@ -14,9 +14,12 @@
 #include<algorithm>
 #include<string>
 #include<utility>
+#include <fstream>
 
 struct DetHisto {
   TH2D* hclscharge;
+  TH2D* hclsx; 
+  TH2D* hclsy; 
   TH2D* hclsSizex;
   TH2D* hclsSizey; 
   TH2D* hncls;
@@ -52,7 +55,9 @@ struct DetHisto {
     std::cout << "Booking histos for:" << rawid << std::endl;
     TString tag = TString(std::to_string(rawid));
     //clusters
-    hclscharge = new TH2D("compcharge" + tag, "Cluster charge;gpu;cpu", 200, 0, 200e3, 200, 0, 200e3);      
+    hclscharge = new TH2D("compcharge" + tag, "Cluster charge;gpu;cpu", 200, 0, 200e3, 200, 0, 200e3); 
+    hclsx = new TH2D("compx"+tag, "Cluster pos x;gpu;cpu", 180, -10., 170., 180, -10., 170.); 
+    hclsy = new TH2D("compy"+tag, "Cluster pos y;gpu;cpu", 470, -10., 460., 470, -10., 460.); 
     hclsSizex = new TH2D("compclswx" + tag, "Cluster size X;gpu;cpu", 30, 0, 30, 30, 0, 30);
     hclsSizey = new TH2D("compclswy" + tag, "Cluster size Y;gpu;cpu", 30, 0, 30, 30, 0, 30);
     hncls = new TH2D("compnclusters" + tag, "#clusters;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
@@ -78,8 +83,11 @@ public:
     fillHistosFordet_ = plotdethisto;
     verbose = configVerbose; 
     if(!fillHistosFordet_)  std::cout << "Per det Histos will not be booked\n";
+    debugfile.open("debug.log"); 
   }
-  ~DetAnalyzer() {}
+  ~DetAnalyzer() {
+    debugfile.close(); 
+  }
   
   void getTree(TString fname, bool isgpu) {
     TFile* fin = TFile::Open(fname);
@@ -121,20 +129,32 @@ public:
     bool mincolmatch = (gpuminCol == cpuminCol); 
     bool maxcolmatch = (gpumaxCol == cpumaxCol); 
     int generalmatching = xmatch + ymatch + xsizematch + ysizematch + minrowmatch + maxrowmatch + mincolmatch + maxcolmatch; 
-    bool sizematching = (xsizematch and ysizematch and minrowmatch and maxrowmatch and mincolmatch and maxcolmatch); 
+    bool sizematch = (xsizematch and ysizematch and minrowmatch and maxrowmatch and mincolmatch and maxcolmatch); 
     bool allmatch = (generalmatching == 8); 
-    if (verbose && (generalmatching != 8) && (generalmatching > 4)) std::cout << TString::Format("generalmatching: %i, gpu x: %f, cpu x: %f, gpu y: %f, cpu y: %f, gpu size x: %i, cpu size x: %i, gpu size y: %i, cpu size y: %i, gpu min row: %i, cpu min row: %i, gpu max row: %i, cpu max row: %i, gpu min column: %i, cpu min column: %i, gpu max column: %i, cpu max column: %i", generalmatching, gpux, cpux, gpuy, cpuy, gpuSizex, cpuSizex, gpuSizey, cpuSizey, gpuminRow, cpuminRow, gpumaxRow, cpumaxRow, gpuminCol, cpuminCol, gpumaxCol, cpumaxCol) << std::endl; 
+    if (verbose && (generalmatching != 8) && sizematch) 
+    {
+      //std::cout << TString::Format("generalmatching: %i, gpu x: %f, cpu x: %f, gpu y: %f, cpu y: %f, gpu size x: %i, cpu size x: %i, gpu size y: %i, cpu size y: %i, gpu min row: %i, cpu min row: %i, gpu max row: %i, cpu max row: %i, gpu min column: %i, cpu min column: %i, gpu max column: %i, cpu max column: %i", generalmatching, gpux, cpux, gpuy, cpuy, gpuSizex, cpuSizex, gpuSizey, cpuSizey, gpuminRow, cpuminRow, gpumaxRow, cpumaxRow, gpuminCol, cpuminCol, gpumaxCol, cpumaxCol) << std::endl; 
+      debugfile << TString::Format("generalmatching: %i, gpu x: %f, cpu x: %f, gpu y: %f, cpu y: %f, gpu size x: %i, cpu size x: %i, gpu size y: %i, cpu size y: %i, gpu min row: %i, cpu min row: %i, gpu max row: %i, cpu max row: %i, gpu min column: %i, cpu min column: %i, gpu max column: %i, cpu max column: %i", generalmatching, gpux, cpux, gpuy, cpuy, gpuSizex, cpuSizex, gpuSizey, cpuSizey, gpuminRow, cpuminRow, gpumaxRow, cpumaxRow, gpuminCol, cpuminCol, gpumaxCol, cpumaxCol) << std::endl; 
+    }
 
+    if (sizematch){
+      deltax->Fill(abs(gpux - cpux)); 
+      deltay->Fill(abs(gpuy - cpuy)); 
+    }
 
-    return (generalmatching == 8); 
+    return (sizematch); 
   }
   
   void bookGlobalHistos() {
     //clusters
-    hclscharge = new TH2D("compcharge", "Cluster charge;gpu;cpu", 200, 0, 200e3, 200, 0, 200e3);      
+    hclscharge = new TH2D("compcharge", "Cluster charge;gpu;cpu", 200, 0, 200e3, 200, 0, 200e3); 
+    hclsx = new TH2D("compx", "Cluster pos x;gpu;cpu", 180, -10., 170., 180, -10., 170.);  
+    hclsy = new TH2D("compy", "Cluster pos y;gpu;cpu", 470, -10., 460., 470, -10., 460.);    
     hclsSizex = new TH2D("compclswx", "Cluster size X;gpu;cpu", 30, 0, 30, 30, 0, 30);
     hclsSizey = new TH2D("compclswy", "Cluster size Y;gpu;cpu", 30, 0, 30, 30, 0, 30);
     hncls = new TH2D("compnclusters", "#clusters;gpu;cpu", 51, -0.5, 50.5, 51, -0.5, 50.5);
+    deltax = new TH1D("deltax", "Difference in x position between matched clusters", 20000000, -0.01, 0.01); 
+    deltay = new TH1D("deltay", "Difference in y position between matched clusters", 20000000, -0.01, 0.01); 
     //digis
     hdigiadc = new TH2D("compadc", "Digi adc;gpu;cpu", 300, 0, 300, 300, 0, 300); 
     hdigirow = new TH2D("comprow", "Digi row;gpu;cpu", 200, 0, 200, 200, 0, 200);
@@ -203,7 +223,7 @@ public:
         if (compareCluster(g_x, g_y, g_sizeX, g_sizeY, g_minPixelRow, g_maxPixelRow, g_minPixelCol, g_maxPixelCol, c_x, c_y, c_sizeX, c_sizeY, c_minPixelRow, c_maxPixelRow, c_minPixelCol, c_maxPixelCol)) 
         {
           // Fill histos 
-          std::cout << "The x position between gpu and cpu reconstruction match!" << std::endl; 
+          //std::cout << "The x position between gpu and cpu reconstruction match!" << std::endl; 
 
 
           if(fillHistosFordet_) 
@@ -211,11 +231,15 @@ public:
             histomap_[rawid].hclscharge->Fill(g_charge, c_charge);
             histomap_[rawid].hclsSizex->Fill(g_sizeX, c_sizeX);
             histomap_[rawid].hclsSizey->Fill(g_sizeY, c_sizeY);
+            histomap_[rawid].hclsx->Fill(g_x, c_x);
+            histomap_[rawid].hclsy->Fill(g_y, c_y); 
           }
         }
         hclscharge->Fill(g_charge, c_charge);
         hclsSizex->Fill(g_sizeX, c_sizeX);
         hclsSizey->Fill(g_sizeX, c_sizeY);
+        hclsx->Fill(g_x, c_x); 
+        hclsy->Fill(g_y, c_y); 
 
       }
     }
@@ -349,9 +373,13 @@ public:
     fout->mkdir("cluster");
     fout->cd("cluster");
     hclscharge->Write();
+    hclsx->Write(); 
+    hclsy->Write(); 
     hclsSizex->Write();
-    hclsSizey->Write();
+    hclsSizey->Write(); 
     hncls->Write();
+    deltax->Write(); 
+    deltay->Write(); 
     fout->mkdir("digi");
     fout->cd("digi");
     hdigiadc->Write();
@@ -381,6 +409,8 @@ public:
       hd.second.hclscharge->Write();
       hd.second.hclsSizex->Write();
       hd.second.hclsSizey->Write();
+      hd.second.hclsx->Write(); 
+      hd.second.hclsy->Write(); 
       hd.second.hncls->Write();
       //digis
       hd.second.hdigiadc->Write();
@@ -408,11 +438,16 @@ private:
   
   bool fillHistosFordet_;
   bool verbose; 
+  std::ofstream debugfile;
 
-  TH2D* hclscharge;
+  TH2D* hclscharge; 
+  TH2D* hclsx; 
+  TH2D* hclsy; 
   TH2D* hclsSizex;
   TH2D* hclsSizey; 
   TH2D* hncls;
+  TH1D* deltax; 
+  TH1D* deltay; 
 
   TH2D* hdigiadc;
   TH2D* hdigirow;
