@@ -61,6 +61,7 @@ private:
                                                    const reco::BeamSpot& beamspot);
 
   edm::EDGetTokenT<reco::VertexCollection> vertexSrc_;
+  edm::EDGetTokenT<reco::VertexCollection>puproxySrc_; 
   edm::EDGetTokenT<reco::BeamSpot> beamspotSrc_;
   edm::EDGetTokenT<LumiScalersCollection> lumiScalersSrc_;
   edm::EDGetTokenT<OnlineLuminosityRecord> metaDataSrc_;
@@ -328,6 +329,7 @@ private:
 
 PrimaryVertexResolution::PrimaryVertexResolution(const edm::ParameterSet& iConfig)
     : vertexSrc_(consumes<reco::VertexCollection>(iConfig.getUntrackedParameter<edm::InputTag>("vertexSrc"))),
+      puproxySrc_(consumes<reco::VertexCollection>(iConfig.getUntrackedParameter<edm::InputTag>("puproxySrc"))), 
       beamspotSrc_(consumes<reco::BeamSpot>(iConfig.getUntrackedParameter<edm::InputTag>("beamspotSrc"))),
       lumiScalersSrc_(consumes<LumiScalersCollection>(iConfig.getUntrackedParameter<edm::InputTag>("lumiScalersSrc"))),
       metaDataSrc_(consumes<OnlineLuminosityRecord>(iConfig.getUntrackedParameter<edm::InputTag>("metaDataSrc"))),
@@ -396,6 +398,15 @@ void PrimaryVertexResolution::analyze(const edm::Event& iEvent, const edm::Event
   const reco::VertexCollection& vertices = *hvertices;
   if (vertices.empty())
     return;
+
+  edm::Handle<reco::VertexCollection> hpuproxy; 
+  iEvent.getByToken(puproxySrc_, hpuproxy); 
+  const reco::VertexCollection& puproxy = *hpuproxy; 
+  if (puproxy.empty()) 
+  {
+    std::cerr << "ERROR: No valid PU proxy provided" << std::endl; 
+    return; 
+  }
 
   edm::Handle<reco::BeamSpot> hbeamspot;
   iEvent.getByToken(beamspotSrc_, hbeamspot);
