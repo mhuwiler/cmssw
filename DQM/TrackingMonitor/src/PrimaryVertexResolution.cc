@@ -346,6 +346,7 @@ PrimaryVertexResolution::~PrimaryVertexResolution() {}
 void PrimaryVertexResolution::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.addUntracked<edm::InputTag>("vertexSrc", edm::InputTag("trackingDQMgoodOfflinePrimaryVertices"));
+  desc.addUntracked<edm::InputTag>("puproxySrc", edm::InputTag("trackingDQMgoodOfflinePrimaryVertices")); 
   desc.addUntracked<edm::InputTag>("beamspotSrc", edm::InputTag("offlineBeamSpot"));
   desc.addUntracked<edm::InputTag>("lumiScalersSrc", edm::InputTag("scalersRawToDigi"));
   desc.addUntracked<edm::InputTag>("metaDataSrc", edm::InputTag("onlineMetaDataDigis"));
