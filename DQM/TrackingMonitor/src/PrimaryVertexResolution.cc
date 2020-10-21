@@ -291,7 +291,7 @@ private:
     }
 
     void calculateAndFillResolution(const std::vector<reco::TransientTrack>& tracks,
-                                    size_t puestimator,
+                                    size_t nvertices,
                                     float lumi,
                                     std::mt19937& engine,
                                     AdaptiveVertexFitter& fitter);
@@ -404,7 +404,7 @@ void PrimaryVertexResolution::analyze(const edm::Event& iEvent, const edm::Event
   iEvent.getByToken(puproxySrc_, puproxy); 
   if (puproxy->empty()) 
   {
-    std::cerr << "ERROR: No valid PU proxy provided" << std::endl; // TODO: Use message logger 
+    std::cerr << "ERROR: No valid PU proxy provided" << std::endl; // TODO: Use message logger 
     return; 
   }
 
@@ -439,10 +439,10 @@ void PrimaryVertexResolution::analyze(const edm::Event& iEvent, const edm::Event
   // The PV
   auto iPV = cbegin(vertices);
   const reco::Vertex& thePV = *iPV;
-  const auto puestimator = puproxy->size();
+  const auto nvertices = vertices.size();
   if (thePV.tracksSize() >= 4) {
     auto sortedTracks = sortTracksByPt(thePV, ttBuilder, beamspot);
-    hPV_.calculateAndFillResolution(sortedTracks, puestimator, lumi, engine_, fitter_);
+    hPV_.calculateAndFillResolution(sortedTracks, nvertices, lumi, engine_, fitter_);
   }
   ++iPV;
 
@@ -450,7 +450,7 @@ void PrimaryVertexResolution::analyze(const edm::Event& iEvent, const edm::Event
   for (auto endPV = cend(vertices); iPV != endPV; ++iPV) {
     if (iPV->tracksSize() >= 4) {
       auto sortedTracks = sortTracksByPt(*iPV, ttBuilder, beamspot);
-      hOtherV_.calculateAndFillResolution(sortedTracks, puestimator, lumi, engine_, fitter_);
+      hOtherV_.calculateAndFillResolution(sortedTracks, nvertices, lumi, engine_, fitter_);
     }
   }
 }
@@ -479,7 +479,7 @@ std::vector<reco::TransientTrack> PrimaryVertexResolution::sortTracksByPt(const 
 }
 
 void PrimaryVertexResolution::Plots::calculateAndFillResolution(const std::vector<reco::TransientTrack>& tracks,
-                                                                size_t puestimator,
+                                                                size_t nvertices,
                                                                 float lumi,
                                                                 std::mt19937& engine,
                                                                 AdaptiveVertexFitter& fitter) {
@@ -520,7 +520,7 @@ void PrimaryVertexResolution::Plots::calculateAndFillResolution(const std::vecto
       res,
       (sumpt1 + sumpt2) /
           2.0);  // taking average is probably the best we can do, anyway they should be close to each other
-  hDiff_Nvertices_.fill(res, puestimator);
+  hDiff_Nvertices_.fill(res, nvertices);
 
   if (vertex1.isValid() && vertex2.isValid()) {
     hDiff_X_.fill(res, res.avgx());
