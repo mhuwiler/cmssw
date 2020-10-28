@@ -36,7 +36,7 @@ double GetLumi::getRawValue(const edm::Event& iEvent) {
   // DPGAnalysis/SiStripTools/src/DigiLumiCorrHistogramMaker.cc
   // the scale factor 6.37 should follow the lumi prescriptions
   edm::Handle<LumiDetails> lumi;
-  iEvent.getLuminosityBlock().getByToken(lumiSummaryToken_, lumi);
+  iEvent.getByToken(lumiDetailsToken_, lumi);
 
   double bxlumi = -1.;
   if (lumi->isValid()) {
