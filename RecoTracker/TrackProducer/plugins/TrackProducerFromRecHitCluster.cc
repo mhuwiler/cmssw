@@ -58,6 +58,8 @@ private:
     void produce(edm::Event&, const edm::EventSetup&) override;
     void endStream() override;
 
+    std::vector<std::vector<const TrackingRecHit *> > getRechitsFromTracks(const edm::Event&); 
+
     edm::Handle<reco::BeamSpot> hBeamSpot; 
 
     edm::EDPutTokenT<reco::TrackCollection> trackPutToken; 
@@ -69,6 +71,8 @@ private:
     const edm::ESGetToken<Propagator, TrackingComponentsRecord> trackPropagatorOppositeToken;
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> trackerGeometryToken;
     const edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> fieldToken; 
+    bool doTest = false; 
+    edm::EDGetTokenT<reco::TrackCollection> tracksToken; 
 
     PixelFitterBase *fitter = nullptr; 
 
@@ -94,9 +98,15 @@ TrackFitterFromML::TrackFitterFromML(const edm::ParameterSet& iConfig)
       trackPropagator(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("propagator")))),
       trackPropagatorOppositeToken(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("oppositePropagator")))),
       trackerGeometryToken(esConsumes()),
-      fieldToken(esConsumes()) 
+      fieldToken(esConsumes()), 
+      doTest(iConfig.getParameter<bool>("doTest"))
 {
     produces<reco::TrackCollection>();
+    
+    if (doTest) 
+    {
+        tracksToken = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("tracks")); 
+    }
 }
 
 TrackFitterFromML::~TrackFitterFromML() 
@@ -121,7 +131,11 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     iEvent.getByToken(beamSpotToken, hBeamSpot); 
 
 
-    std::vector<std::vector<const TrackingRecHit *> > mlProtoTracks; // TODO: get this from the DNN somehow 
+    std::vector<std::vector<const TrackingRecHit *> > mlProtoTracks = getRechitsFromTracks(iEvent); // TODO: get this from the DNN somehow 
+
+    if (doTest) {
+        // Get the RecHits from tracks
+    }
 
     tracks->reserve(mlProtoTracks.size()); // TODO: do we really want to do this? TrackingRegion might reduce the phase space 
 
@@ -145,6 +159,29 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     iEvent.put(trackPutToken, std::move(tracks)); 
 
     delete fitter; 
+}
+
+std::vector<std::vector<const TrackingRecHit *> > TrackFitterFromML::getRechitsFromTracks(const edm::Event& iEvent) 
+{
+    edm::Handle<reco::TrackCollection> hTracks; 
+    iEvent.getByToken(tracksToken, hTracks); 
+
+    std::vector<std::vector<const TrackingRecHit *> > recHitCollection; 
+
+    for (auto track : *hTracks.product()) 
+    {
+        // Access the RecHits
+        std::vector<const TrackingRecHit*> recHitTrack; 
+        for (auto recHit : track.recHits()) 
+        {
+            // Fill the new datafromat with the recHits 
+            recHitTrack.push_back(recHit); 
+        }
+        recHitCollection.push_back(recHitTrack); 
+    }
+
+    return recHitCollection; 
+
 }
 
 // ------------ method called once each stream before processing any runs, lumis or events  ------------
@@ -204,6 +241,8 @@ void TrackFitterFromML::fillDescriptions(edm::ConfigurationDescriptions& descrip
     //desc.add<edm::InputTag>("magneticField", edm::InputTag("GlobalTrackingRegionFromBeamSpotEDProducer")); 
     desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));  
     desc.add<edm::InputTag>("trackingRegion", edm::InputTag("GlobalTrackingRegionFromBeamSpotEDProducer")); 
+    desc.add<edm::InputTag>("tracks", edm::InputTag("generalTracks")); 
+    desc.add<bool>("doTest", false); 
     auto label = "TrackFitterML"; // Is this the name to access the collection? 
     descriptions.add(label, desc);
 }
