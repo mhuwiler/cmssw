@@ -7,5 +7,7 @@
   <use name="Alignment/TwoBodyDecay"/>
   <use name="Alignment/ReferenceTrajectories"/>
   <use name="TrackingTools/GsfTracking"/>
+  <use name="RecoTracker/TkTrackingRegions"/>
+  <use name="RecoPixelVertexing/PixelTrackFitting"/>
   <flags EDM_PLUGIN="1"/>
 </library>
