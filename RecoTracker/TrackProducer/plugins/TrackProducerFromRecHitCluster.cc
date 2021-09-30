@@ -38,6 +38,8 @@
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "RecoPixelVertexing/PixelTrackFitting/plugins/storeTracks.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/TracksWithHits.h"
 //#include "RecoTracker/TkTrackingRegions/interface/GlobalTrackingRegion.h"
 
 
@@ -62,7 +64,7 @@ private:
 
     edm::Handle<reco::BeamSpot> hBeamSpot; 
 
-    edm::EDPutTokenT<reco::TrackCollection> trackPutToken; 
+    //edm::EDPutTokenT<reco::TrackCollection> trackPutToken; 
 
     const edm::EDGetTokenT<reco::BeamSpot> beamSpotToken;
     const edm::EDGetTokenT<edm::OwnVector<TrackingRegion> > trackingRegionToken; 
@@ -71,6 +73,7 @@ private:
     const edm::ESGetToken<Propagator, TrackingComponentsRecord> trackPropagatorOppositeToken;
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> trackerGeometryToken;
     const edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> fieldToken; 
+    const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> tTopoToken;
     bool doTest = false; 
     edm::EDGetTokenT<reco::TrackCollection> tracksToken; 
 
@@ -99,10 +102,14 @@ TrackFitterFromML::TrackFitterFromML(const edm::ParameterSet& iConfig)
       trackPropagatorOppositeToken(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("oppositePropagator")))),
       trackerGeometryToken(esConsumes()),
       fieldToken(esConsumes()), 
+      tTopoToken(esConsumes<TrackerTopology, TrackerTopologyRcd>()), 
       doTest(iConfig.getParameter<bool>("doTest")),
       tracksToken(consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("tracks"))) 
 {
-    trackPutToken = produces<reco::TrackCollection>();
+    produces<reco::TrackCollection>();
+    produces<TrackingRecHitCollection>(); 
+    produces<reco::TrackExtraCollection>(); 
+
     
     if (doTest) 
     {
@@ -137,8 +144,10 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     if (doTest) 
     {
         // Get the RecHits from tracks 
-        
+        mlProtoTracks = getRechitsFromTracks(iEvent); 
     }
+
+    std::cout << "Aquired a vector of clustered rechits of size" << std::endl; 
 
     tracks->reserve(mlProtoTracks.size()); // TODO: do we really want to do this? TrackingRegion might reduce the phase space 
 
@@ -151,15 +160,42 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
 
     const TrackingRegion *trackingRegion = &(*iEvent.get(trackingRegionToken).begin()); // TODO: loop over all tracking region 
 
+    //Retrieve tracker topology from geometry
+    //edm::ESHandle<TrackerTopology> tTopoHandle = iSetup.getHandle(tTopoToken);
+    auto topology= iSetup.getData(tTopoToken); 
 
-    for (auto recHits : mlProtoTracks) 
+    std::cout << "Before fitting" << std::endl; 
+
+    pixeltrackfitting::TracksWithRecHits trackHitMap; 
+
+    for (auto hits : mlProtoTracks) 
     {
         assert(fitter); 
-        // For each collection of RecHits provided by the DNN, aka protoTrack, we perform a Kalman Fit 
-        tracks->push_back(*fitter->run(recHits, *trackingRegion, iSetup)); //TODO: in version 12, the setup is no longer required 
+        /*std::cout << "Before fitting step" << std::endl; 
+        // For each collection of RecHits provided by the DNN, aka protoTrack, we perform a Kalman Fit
+        std::unique_ptr<reco::Track> tempTrack = std::move(fitter->run(recHits, *trackingRegion, iSetup)); //TODO: in version 12, the setup is no longer required 
+        std::cout << "After fitting step" << std::endl; 
+        for (auto hit : recHits) 
+        {
+            tempTrack->appendHitPattern(&(*hit), topology); 
+        }
+        //tracks->emplace_back(tempTrack.release()); 
+        trackHitMap.push_back(std::make_pair<reco::Track, std::vector)
+        std::cout << "After pushing into collection" << std::endl; */
+
+        // fitting
+        std::unique_ptr<reco::Track> track = fitter->run(hits, *trackingRegion, iSetup); 
+        if (!track) continue; 
+
+        // add tracks
+        trackHitMap.emplace_back(track.release(), hits);
     }
 
-    iEvent.put(trackPutToken, std::move(tracks)); 
+    std::cout << "Number of (protoTracks, fittedTracks): " << mlProtoTracks.size() << ", " << trackHitMap.size() << std::endl; 
+    
+    storeTracks(iEvent, trackHitMap, topology); 
+
+    //iEvent.put(trackPutToken, std::move(tracks)); 
 
     delete fitter; 
 }
@@ -171,17 +207,26 @@ std::vector<std::vector<const TrackingRecHit *> > TrackFitterFromML::getRechitsF
 
     std::vector<std::vector<const TrackingRecHit *> > recHitCollection; 
 
+    std::cout << "Num of tracks: " << hTracks.product()->size() << std::endl; 
+
     for (auto track : *hTracks.product()) 
     {
+        std::cout << "Loping over tracks" << std::endl; 
         // Access the RecHits
         std::vector<const TrackingRecHit*> recHitTrack; 
         for (auto recHit : track.recHits()) 
         {
+            std::cout << "Looping over RecHits" << std::endl; 
             // Fill the new datafromat with the recHits 
+            if (!recHit->isValid()) continue; 
             recHitTrack.push_back(recHit); 
+            std::cout << "Added rechit to collection" << std::endl; 
         }
+        if (recHitTrack.size()<3) continue; 
         recHitCollection.push_back(recHitTrack); 
+        std::cout << "Added cluster to collection" << std::endl; 
     }
+    std::cout << "Finished loop over tracks" << std::endl; 
 
     return recHitCollection; 
 
