@@ -38,7 +38,7 @@
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
-#include "RecoTracker/TkTrackingRegions/interface/GlobalTrackingRegion.h"
+//#include "RecoTracker/TkTrackingRegions/interface/GlobalTrackingRegion.h"
 
 
 
@@ -65,7 +65,7 @@ private:
     edm::EDPutTokenT<reco::TrackCollection> trackPutToken; 
 
     const edm::EDGetTokenT<reco::BeamSpot> beamSpotToken;
-    const edm::EDGetTokenT<GlobalTrackingRegion> trackingRegionToken; 
+    const edm::EDGetTokenT<edm::OwnVector<TrackingRegion> > trackingRegionToken; 
     const edm::ESGetToken<TransientTrackingRecHitBuilder, TransientRecHitRecord> ttTrackBuilderToken;
     const edm::ESGetToken<Propagator, TrackingComponentsRecord> trackPropagator;
     const edm::ESGetToken<Propagator, TrackingComponentsRecord> trackPropagatorOppositeToken;
@@ -93,19 +93,20 @@ private:
 //
 TrackFitterFromML::TrackFitterFromML(const edm::ParameterSet& iConfig)
     : beamSpotToken(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
-      trackingRegionToken(consumes<GlobalTrackingRegion>(iConfig.getParameter<edm::InputTag>("trackingRegion"))), 
+      trackingRegionToken(consumes<edm::OwnVector<TrackingRegion> >(iConfig.getParameter<edm::InputTag>("trackingRegion"))), 
       ttTrackBuilderToken(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("ttRecHitBuilder")))),
       trackPropagator(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("propagator")))),
       trackPropagatorOppositeToken(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("oppositePropagator")))),
       trackerGeometryToken(esConsumes()),
       fieldToken(esConsumes()), 
-      doTest(iConfig.getParameter<bool>("doTest"))
+      doTest(iConfig.getParameter<bool>("doTest")),
+      tracksToken(consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("tracks"))) 
 {
-    produces<reco::TrackCollection>();
+    trackPutToken = produces<reco::TrackCollection>();
     
     if (doTest) 
     {
-        tracksToken = consumes<reco::TrackCollection>(iConfig.getParameter<edm::InputTag>("tracks")); 
+        
     }
 }
 
@@ -131,10 +132,12 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     iEvent.getByToken(beamSpotToken, hBeamSpot); 
 
 
-    std::vector<std::vector<const TrackingRecHit *> > mlProtoTracks = getRechitsFromTracks(iEvent); // TODO: get this from the DNN somehow 
+    std::vector<std::vector<const TrackingRecHit *> > mlProtoTracks; // TODO: get this from the DNN somehow 
 
-    if (doTest) {
-        // Get the RecHits from tracks
+    if (doTest) 
+    {
+        // Get the RecHits from tracks 
+        
     }
 
     tracks->reserve(mlProtoTracks.size()); // TODO: do we really want to do this? TrackingRegion might reduce the phase space 
@@ -146,14 +149,14 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
                                     &iSetup.getData(fieldToken),
                                     hBeamSpot.product());  
 
-    GlobalTrackingRegion trackingRegion = iEvent.get(trackingRegionToken); // TODO: define a tracking region 
+    const TrackingRegion *trackingRegion = &(*iEvent.get(trackingRegionToken).begin()); // TODO: loop over all tracking region 
 
 
     for (auto recHits : mlProtoTracks) 
     {
         assert(fitter); 
         // For each collection of RecHits provided by the DNN, aka protoTrack, we perform a Kalman Fit 
-        tracks->push_back(*fitter->run(recHits, trackingRegion, iSetup)); //TODO: in version 12, the setup is no longer required 
+        tracks->push_back(*fitter->run(recHits, *trackingRegion, iSetup)); //TODO: in version 12, the setup is no longer required 
     }
 
     iEvent.put(trackPutToken, std::move(tracks)); 
@@ -243,7 +246,7 @@ void TrackFitterFromML::fillDescriptions(edm::ConfigurationDescriptions& descrip
     desc.add<edm::InputTag>("trackingRegion", edm::InputTag("GlobalTrackingRegionFromBeamSpotEDProducer")); 
     desc.add<edm::InputTag>("tracks", edm::InputTag("generalTracks")); 
     desc.add<bool>("doTest", false); 
-    auto label = "TrackFitterML"; // Is this the name to access the collection? 
+    auto label = "trackProducerFromRecHitCluster"; // Is this the name to access the collection? 
     descriptions.add(label, desc);
 }
 
