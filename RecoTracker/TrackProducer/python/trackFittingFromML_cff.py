@@ -26,7 +26,7 @@ trackCollectionKFfromML = cms.EDProducer ("TrackFitterFromML",
     #magneticField = cms.InputTag(""), 
     beamSpot = cms.InputTag("offlineBeamSpot"), 
     trackingRegion = cms.InputTag("trackingRegion"), 
-    doTest = cms.bool(False), 
+    doTest = cms.bool(True), 
     tracks = cms.InputTag("generalTracks")
 )
 
