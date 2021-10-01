@@ -147,8 +147,6 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
         mlProtoTracks = getRechitsFromTracks(iEvent); 
     }
 
-    std::cout << "Aquired a vector of clustered rechits of size" << std::endl; 
-
     tracks->reserve(mlProtoTracks.size()); // TODO: do we really want to do this? TrackingRegion might reduce the phase space 
 
     fitter = new KFBasedPixelFitter(&iSetup.getData(trackPropagator),
@@ -163,8 +161,6 @@ void TrackFitterFromML::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
     //Retrieve tracker topology from geometry
     //edm::ESHandle<TrackerTopology> tTopoHandle = iSetup.getHandle(tTopoToken);
     auto topology= iSetup.getData(tTopoToken); 
-
-    std::cout << "Before fitting" << std::endl; 
 
     pixeltrackfitting::TracksWithRecHits trackHitMap; 
 
@@ -207,26 +203,19 @@ std::vector<std::vector<const TrackingRecHit *> > TrackFitterFromML::getRechitsF
 
     std::vector<std::vector<const TrackingRecHit *> > recHitCollection; 
 
-    std::cout << "Num of tracks: " << hTracks.product()->size() << std::endl; 
-
     for (auto track : *hTracks.product()) 
     {
-        std::cout << "Loping over tracks" << std::endl; 
         // Access the RecHits
         std::vector<const TrackingRecHit*> recHitTrack; 
         for (auto recHit : track.recHits()) 
         {
-            std::cout << "Looping over RecHits" << std::endl; 
             // Fill the new datafromat with the recHits 
             if (!recHit->isValid()) continue; 
             recHitTrack.push_back(recHit); 
-            std::cout << "Added rechit to collection" << std::endl; 
         }
         if (recHitTrack.size()<3) continue; 
         recHitCollection.push_back(recHitTrack); 
-        std::cout << "Added cluster to collection" << std::endl; 
     }
-    std::cout << "Finished loop over tracks" << std::endl; 
 
     return recHitCollection; 
 
