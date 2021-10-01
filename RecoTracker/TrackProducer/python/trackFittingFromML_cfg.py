@@ -24,6 +24,7 @@ process.load('DQMServices.Core.DQMStoreNonLegacy_cff')
 process.load('DQMOffline.Configuration.DQMOfflineMC_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load('RecoTracker.TrackProducer.trackFittingFromML_cff') 
+process.load("RecoTracker.TrackProducer.trackToTrackComparison_cff")
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(10),
@@ -92,6 +93,8 @@ process.DQMoutput = cms.OutputModule("DQMRootOutputModule",
     splitLevel = cms.untracked.int32(0)
 )
 
+
+
 # Additional output definition
 
 # Other statements
@@ -108,14 +111,14 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', ''
 process.trackFitting_step = cms.Path(process.trackFittingKFFromRecHit)
 #process.prevalidation_step = cms.Path(process.globalPrevalidationTrackingOnly)
 #process.validation_step = cms.EndPath(process.globalValidationTrackingOnly)
-#process.dqmoffline_step = cms.EndPath(process.DQMOfflineTracking)
+process.dqmoffline_step = cms.Path(process.mlToTrackMonitoring)
 #process.dqmofflineOnPAT_step = cms.EndPath(process.PostDQMOffline)
 #process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
-#process.DQMoutput_step = cms.EndPath(process.DQMoutput)
+process.DQMoutput_step = cms.EndPath(process.DQMoutput)
 
 # Schedule definition
 #process.schedule = cms.Schedule(process.raw2digi_step,process.reconstruction_step,process.trackFitting_step, process.prevalidation_step,process.validation_step,process.dqmoffline_step,process.dqmofflineOnPAT_step,process.RECOSIMoutput_step,process.DQMoutput_step)
-process.schedule = cms.Schedule(process.trackFitting_step)
+process.schedule = cms.Schedule(process.trackFitting_step,process.dqmoffline_step,process.DQMoutput_step)
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 
