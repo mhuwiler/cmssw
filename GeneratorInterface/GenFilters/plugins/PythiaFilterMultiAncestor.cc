@@ -144,7 +144,7 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
       HepMC::FourVector mom = MCFilterZboostHelper::zboost((*p)->momentum(), betaBoost);
       double rapidity = 0.5 * log((mom.e() + mom.pz()) / (mom.e() - mom.pz()));
 
-      if (abs((*p)->pdg_id()) == particleID && mom.rho() > minpcut && mom.rho() < maxpcut &&
+      if ((*p)->pdg_id() == particleID && mom.rho() > minpcut && mom.rho() < maxpcut &&
           (*p)->momentum().perp() > minptcut && (*p)->momentum().perp() < maxptcut && mom.eta() > minetacut &&
           mom.eta() < maxetacut && rapidity > minrapcut && rapidity < maxrapcut && (*p)->momentum().phi() > minphicut &&
           (*p)->momentum().phi() < maxphicut) {
