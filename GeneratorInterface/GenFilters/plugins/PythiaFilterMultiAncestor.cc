@@ -58,6 +58,8 @@ public:
 private:
   bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConf = false) const;
 
+  bool containsDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle) const; 
+
   const edm::EDGetTokenT<edm::HepMCProduct> token_;
   const int particleID;
   const double minpcut;
@@ -82,7 +84,7 @@ private:
   const int processID;
 
   const double betaBoost;
-  const bool useCC = true; // TODO: change to an option 
+  const bool considerCC = true; // TODO: change to an option 
 
 };
 
@@ -141,13 +143,14 @@ bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDt
 }
 
 // ------------ method called to produce the data  ------------
-bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const edm::EventSetup&) const 
+bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const edm::EventSetup&) const
 {
   using namespace edm;
   bool accepted = false;
   Handle<HepMCProduct> evt;
   iEvent.getByToken(token_, evt);
   bool isCC = false; 
+
 
   const HepMC::GenEvent* myGenEvent = evt->GetEvent();
 
@@ -158,63 +161,39 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
       HepMC::FourVector momentum = MCFilterZboostHelper::zboost((*p)->momentum(), betaBoost);
       double rapidity = 0.5 * log((momentum.e() + momentum.pz()) / (momentum.e() - momentum.pz()));
 
-      if((*p)->pdg_id() == particleID) 
+      int pid = (*p)->pdg_id(); 
+      if(pid == particleID) 
       {
-          isCC=false; 
+          isCC = false; // Reset it in each loop 
       }
-      else if ((*p)->pdg_id() == -particleID) 
+      else if (pid == -particleID) 
       {
-        isCC = true; 
+          isCC = true; 
+          if (!considerCC) continue; 
       }
       else 
       {
         continue; 
       }
 
-      if (isCC  && !useCC) continue; 
-
       if (momentum.rho() > minpcut && momentum.rho() < maxpcut &&
           (*p)->momentum().perp() > minptcut && (*p)->momentum().perp() < maxptcut && momentum.eta() > minetacut &&
           momentum.eta() < maxetacut && rapidity > minrapcut && rapidity < maxrapcut && (*p)->momentum().phi() > minphicut &&
           (*p)->momentum().phi() < maxphicut) 
       {
+        // Check the status of the particle 
+        bool statusPass = ((status == 0) || ((*p)->status() == status)); 
+
         // find the mother
+        bool momFound = false; 
         for (std::vector<int>::const_iterator motherID = motherIDs.begin(); motherID != motherIDs.end(); ++motherID) 
         {
-          // check status if no mother's pdgID is specified
-          if (status == 0 && *motherID == 0) 
-          {
-            accepted = true;
-          }
-          if (status != 0 && *motherID == 0) 
-          {
-            if ((*p)->status() == status)
-            {
-              accepted = true;
-            }
-          }
+          if ((*motherID == 0) || isAncestor(*p, *motherID, isCC)) momFound = true; // If one of moms is found, set to true 
 
-          // check the mother's pdgID
-          if (status == 0 && *motherID != 0) 
-          {
-            // if (abs(mother->pdg_id()) == abs(*motherID)) {
-            if (isAncestor(*p, *motherID, isCC)) 
-            {
-              accepted = true;
-            }
-          }
-          if (status != 0 && *motherID != 0) 
-          {
-            // if ((*p)->status() == status && abs(mother->pdg_id()) == abs(*motherID)){
-            if ((*p)->status() == status && isAncestor(*p, *motherID, isCC)) 
-            {
-              accepted = true;
-            }
-          }
         }
 
         // find the daughters
-        if (accepted & (!daughterIDs.empty())) 
+        if (statusPass && momFound && (!daughterIDs.empty())) 
         {
           // if you got this far it means that the mother was found
           // now let's check the daughters
@@ -258,6 +237,8 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
           }
           if (good_dau < daughterIDs.size() && good_dau_cc < daughterIDs.size())
             accepted = false;
+          else 
+            accepted = true; 
         }
       }
       // only need to satisfy the conditions _once_
