@@ -56,7 +56,7 @@ public:
   bool filter(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
 
 private:
-  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch) const;
+  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConf = false) const;
 
   const edm::EDGetTokenT<edm::HepMCProduct> token_;
   const int particleID;
@@ -82,6 +82,8 @@ private:
   const int processID;
 
   const double betaBoost;
+  const bool useCC = true; // TODO: change to an option 
+
 };
 
 PythiaFilterMultiAncestor::PythiaFilterMultiAncestor(const edm::ParameterSet& iConfig)
@@ -111,71 +113,109 @@ PythiaFilterMultiAncestor::PythiaFilterMultiAncestor(const edm::ParameterSet& iC
 }
 
 // ------------ access the full genealogy ---------
-bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDtoMatch) const {
+bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj) const 
+{
+  bool result = false; 
+
   for (HepMC::GenVertex::particle_iterator ancestor = particle->production_vertex()->particles_begin(HepMC::ancestors);
-       ancestor != particle->production_vertex()->particles_end(HepMC::ancestors);
-       ++ancestor) {
+       ancestor != particle->production_vertex()->particles_end(HepMC::ancestors); // If multiple mothers with same ID are required, will return true possibly on the same particle 
+       ++ancestor) 
+  {
     // std::cout << __LINE__ << "]\t particle's PDG ID " << particle->pdg_id()
     //                       << " \t particle's ancestor's PDG ID " << (*ancestor)->pdg_id()
     //                       << " \t ID to match " << IDtoMatch << std::endl;
 
-    if (abs((*ancestor)->pdg_id()) == abs(IDtoMatch)) {
+    if (((*ancestor)->pdg_id() == IDtoMatch) && !chargeConj) 
+    {
       //  std::cout << __LINE__ << "]\t found!" << std::endl;
-      return true;
+      result = true; 
+    }
+    else if (((*ancestor)->pdg_id() == -IDtoMatch) && chargeConj)
+    {
+      result = true;
     }
   }
 
   // std::cout << __LINE__ << "]\t nope, no luck" << std::endl;
-  return false;
+  return result;
 }
 
 // ------------ method called to produce the data  ------------
-bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const edm::EventSetup&) const {
+bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const edm::EventSetup&) const 
+{
   using namespace edm;
   bool accepted = false;
   Handle<HepMCProduct> evt;
   iEvent.getByToken(token_, evt);
+  bool isCC = false; 
 
   const HepMC::GenEvent* myGenEvent = evt->GetEvent();
 
-  if (processID == 0 || processID == myGenEvent->signal_process_id()) {
-    for (HepMC::GenEvent::particle_const_iterator p = myGenEvent->particles_begin(); p != myGenEvent->particles_end();
-         ++p) {
-      HepMC::FourVector mom = MCFilterZboostHelper::zboost((*p)->momentum(), betaBoost);
-      double rapidity = 0.5 * log((mom.e() + mom.pz()) / (mom.e() - mom.pz()));
+  if (processID == 0 || processID == myGenEvent->signal_process_id()) 
+  {
+    for (HepMC::GenEvent::particle_const_iterator p = myGenEvent->particles_begin(); p != myGenEvent->particles_end(); ++p) 
+    {
+      HepMC::FourVector momentum = MCFilterZboostHelper::zboost((*p)->momentum(), betaBoost);
+      double rapidity = 0.5 * log((momentum.e() + momentum.pz()) / (momentum.e() - momentum.pz()));
 
-      if ((*p)->pdg_id() == particleID && mom.rho() > minpcut && mom.rho() < maxpcut &&
-          (*p)->momentum().perp() > minptcut && (*p)->momentum().perp() < maxptcut && mom.eta() > minetacut &&
-          mom.eta() < maxetacut && rapidity > minrapcut && rapidity < maxrapcut && (*p)->momentum().phi() > minphicut &&
-          (*p)->momentum().phi() < maxphicut) {
+      if((*p)->pdg_id() == particleID) 
+      {
+          isCC=false; 
+      }
+      else if ((*p)->pdg_id() == -particleID) 
+      {
+        isCC = true; 
+      }
+      else 
+      {
+        continue; 
+      }
+
+      if (isCC  && !useCC) continue; 
+
+      if (momentum.rho() > minpcut && momentum.rho() < maxpcut &&
+          (*p)->momentum().perp() > minptcut && (*p)->momentum().perp() < maxptcut && momentum.eta() > minetacut &&
+          momentum.eta() < maxetacut && rapidity > minrapcut && rapidity < maxrapcut && (*p)->momentum().phi() > minphicut &&
+          (*p)->momentum().phi() < maxphicut) 
+      {
         // find the mother
-        for (std::vector<int>::const_iterator motherID = motherIDs.begin(); motherID != motherIDs.end(); ++motherID) {
+        for (std::vector<int>::const_iterator motherID = motherIDs.begin(); motherID != motherIDs.end(); ++motherID) 
+        {
           // check status if no mother's pdgID is specified
-          if (status == 0 && *motherID == 0) {
+          if (status == 0 && *motherID == 0) 
+          {
             accepted = true;
           }
-          if (status != 0 && *motherID == 0) {
+          if (status != 0 && *motherID == 0) 
+          {
             if ((*p)->status() == status)
-              accepted = true;
-          }
-
-          // check the mother's pdgID
-          if (status == 0 && *motherID != 0) {
-            // if (abs(mother->pdg_id()) == abs(*motherID)) {
-            if (isAncestor(*p, *motherID)) {
+            {
               accepted = true;
             }
           }
-          if (status != 0 && *motherID != 0) {
+
+          // check the mother's pdgID
+          if (status == 0 && *motherID != 0) 
+          {
+            // if (abs(mother->pdg_id()) == abs(*motherID)) {
+            if (isAncestor(*p, *motherID, isCC)) 
+            {
+              accepted = true;
+            }
+          }
+          if (status != 0 && *motherID != 0) 
+          {
             // if ((*p)->status() == status && abs(mother->pdg_id()) == abs(*motherID)){
-            if ((*p)->status() == status && isAncestor(*p, *motherID)) {
+            if ((*p)->status() == status && isAncestor(*p, *motherID, isCC)) 
+            {
               accepted = true;
             }
           }
         }
 
         // find the daughters
-        if (accepted & (!daughterIDs.empty())) {
+        if (accepted & (!daughterIDs.empty())) 
+        {
           // if you got this far it means that the mother was found
           // now let's check the daughters
           // use a counter, if there's enough daughters that match the pdg and kinematic
@@ -183,12 +223,14 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
           uint good_dau = 0;
           uint good_dau_cc = 0;
           for (HepMC::GenVertex::particle_iterator dau = (*p)->end_vertex()->particles_begin(HepMC::children);
-               dau != (*p)->end_vertex()->particles_end(HepMC::children);
-               ++dau) {
-            for (unsigned int i = 0; i < daughterIDs.size(); ++i) {
+               dau != (*p)->end_vertex()->particles_end(HepMC::children); ++dau) 
+          {
+            for (unsigned int i = 0; i < daughterIDs.size(); ++i) 
+            {
               // if a daughter has its pdgID among the desired ones, apply kin cuts on it
               // if it survives, add a notch to the counter
-              if ((*dau)->pdg_id() == daughterIDs[i]) {
+              if ((*dau)->pdg_id() == daughterIDs[i] && !isCC) 
+              {
                 if ((*dau)->momentum().perp() < daughterMinPts[i])
                   continue;
                 if ((*dau)->momentum().perp() > daughterMaxPts[i])
@@ -200,7 +242,8 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
                 ++good_dau;
               }
               // check charge conjugation
-              if (-(*dau)->pdg_id() == daughterIDs[i]) {  // notice minus sign
+              if (-(*dau)->pdg_id() == daughterIDs[i] && isCC) 
+              {  // notice minus sign
                 if ((*dau)->momentum().perp() < daughterMinPts[i])
                   continue;
                 if ((*dau)->momentum().perp() > daughterMaxPts[i])
@@ -222,13 +265,17 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
         break;
     }
 
-  } else {
+  } else 
+  {
     accepted = true;
   }
 
-  if (accepted) {
+  if (accepted) 
+  {
     return true;
-  } else {
+  } 
+  else 
+  {
     return false;
   }
 }
