@@ -56,9 +56,9 @@ public:
   bool filter(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
 
 private:
-  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConf = false) const;
+  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj = false) const;
 
-  bool containsDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle) const; 
+  bool hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, bool chargeConj = false) const; 
 
   const edm::EDGetTokenT<edm::HepMCProduct> token_;
   const int particleID;
@@ -142,6 +142,44 @@ bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDt
   return result;
 }
 
+bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, const bool chargeConj) const 
+{
+    bool result = false; 
+
+    int coeff = 1; 
+
+    if (chargeConj) coeff = -1; 
+
+    uint good_dau = 0;
+    uint good_dau_cc = 0;
+    int idx = -1; 
+    bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
+    for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(HepMC::children);
+               dau != particle->end_vertex()->particles_end(HepMC::children); ++dau) 
+          {
+            idx++; 
+            for (unsigned int i = 0; i < daughters.size(); ++i) 
+            {
+              // if a daughter has its pdgID among the desired ones, apply kin cuts on it
+              // if it survives, add a notch to the counter
+              if ((*dau)->pdg_id() == coeff*daughterIDs[i]) 
+              {
+                //std::cout << "Particle matching " << std::endl; 
+                if ((*dau)->momentum().perp() < daughterMinPts[i])
+                  continue;
+                if ((*dau)->momentum().perp() > daughterMaxPts[i])
+                  continue;
+                if ((*dau)->momentum().eta() < daughterMinEtas[i])
+                  continue;
+                if ((*dau)->momentum().eta() > daughterMaxEtas[i])
+                  continue;
+                ++good_dau;
+              }
+            }
+          }
+    return (good_dau >= daughterIDs.size() || good_dau_cc >= daughterIDs.size()); 
+}
+
 // ------------ method called to produce the data  ------------
 bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const edm::EventSetup&) const
 {
@@ -199,47 +237,9 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
           // now let's check the daughters
           // use a counter, if there's enough daughters that match the pdg and kinematic
           // criteria accept the event
-          uint good_dau = 0;
-          uint good_dau_cc = 0;
-          for (HepMC::GenVertex::particle_iterator dau = (*p)->end_vertex()->particles_begin(HepMC::children);
-               dau != (*p)->end_vertex()->particles_end(HepMC::children); ++dau) 
-          {
-            for (unsigned int i = 0; i < daughterIDs.size(); ++i) 
-            {
-              // if a daughter has its pdgID among the desired ones, apply kin cuts on it
-              // if it survives, add a notch to the counter
-              if ((*dau)->pdg_id() == daughterIDs[i] && !isCC) 
-              {
-                if ((*dau)->momentum().perp() < daughterMinPts[i])
-                  continue;
-                if ((*dau)->momentum().perp() > daughterMaxPts[i])
-                  continue;
-                if ((*dau)->momentum().eta() < daughterMinEtas[i])
-                  continue;
-                if ((*dau)->momentum().eta() > daughterMaxEtas[i])
-                  continue;
-                ++good_dau;
-              }
-              // check charge conjugation
-              if (-(*dau)->pdg_id() == daughterIDs[i] && isCC) 
-              {  // notice minus sign
-                if ((*dau)->momentum().perp() < daughterMinPts[i])
-                  continue;
-                if ((*dau)->momentum().perp() > daughterMaxPts[i])
-                  continue;
-                if ((*dau)->momentum().eta() < daughterMinEtas[i])
-                  continue;
-                if ((*dau)->momentum().eta() > daughterMaxEtas[i])
-                  continue;
-                ++good_dau_cc;
-              }
-            }
-          }
-          if (good_dau < daughterIDs.size() && good_dau_cc < daughterIDs.size())
-            accepted = false;
-          else 
-            accepted = true; 
+          if (hasDaughters(daughterIDs, *p, isCC)) accepted = true; 
         }
+        std::cout << "Has daughters: " << accepted << ", " << hasDaughters(daughterIDs, *p, isCC) << std::endl; 
       }
       // only need to satisfy the conditions _once_
       if (accepted)
