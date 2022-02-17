@@ -151,33 +151,28 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
     if (chargeConj) coeff = -1; 
 
     uint good_dau = 0;
-    uint good_dau_cc = 0;
     int idx = -1; 
     bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
     for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(HepMC::children);
-               dau != particle->end_vertex()->particles_end(HepMC::children); ++dau) 
+         dau != particle->end_vertex()->particles_end(HepMC::children); ++dau) 
+    {
+      idx++; 
+      for (unsigned int i = 0; i < daughters.size(); ++i) 
+      {
+        // if a daughter has its pdgID among the desired ones, apply kin cuts on it
+        // if it survives, add a notch to the counter
+        if ((*dau)->pdg_id() == coeff*daughterIDs[i]) 
+        {
+          //std::cout << "Particle matching " << std::endl; 
+          if (((*dau)->momentum().perp() > daughterMinPts[i]) && ((*dau)->momentum().perp() < daughterMaxPts[i]) && 
+              ((*dau)->momentum().eta() > daughterMinEtas[i]) && ((*dau)->momentum().eta() < daughterMaxEtas[i])) 
           {
-            idx++; 
-            for (unsigned int i = 0; i < daughters.size(); ++i) 
-            {
-              // if a daughter has its pdgID among the desired ones, apply kin cuts on it
-              // if it survives, add a notch to the counter
-              if ((*dau)->pdg_id() == coeff*daughterIDs[i]) 
-              {
-                //std::cout << "Particle matching " << std::endl; 
-                if ((*dau)->momentum().perp() < daughterMinPts[i])
-                  continue;
-                if ((*dau)->momentum().perp() > daughterMaxPts[i])
-                  continue;
-                if ((*dau)->momentum().eta() < daughterMinEtas[i])
-                  continue;
-                if ((*dau)->momentum().eta() > daughterMaxEtas[i])
-                  continue;
-                ++good_dau;
-              }
-            }
+              ++good_dau; 
           }
-    return (good_dau >= daughterIDs.size() || good_dau_cc >= daughterIDs.size()); 
+        }
+      }
+    }
+    return (good_dau >= daughterIDs.size()); 
 }
 
 // ------------ method called to produce the data  ------------
