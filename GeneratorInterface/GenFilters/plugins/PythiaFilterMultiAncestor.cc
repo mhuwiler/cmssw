@@ -120,8 +120,7 @@ bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDt
   bool result = false; 
 
   for (HepMC::GenVertex::particle_iterator ancestor = particle->production_vertex()->particles_begin(HepMC::ancestors);
-       ancestor != particle->production_vertex()->particles_end(HepMC::ancestors); // If multiple mothers with same ID are required, will return true possibly on the same particle 
-       ++ancestor) 
+       ancestor != particle->production_vertex()->particles_end(HepMC::ancestors); ++ancestor) // If multiple mothers with same ID are required, will return true possibly on the same particle 
   {
     // std::cout << __LINE__ << "]\t particle's PDG ID " << particle->pdg_id()
     //                       << " \t particle's ancestor's PDG ID " << (*ancestor)->pdg_id()
@@ -232,28 +231,24 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
           // now let's check the daughters
           // use a counter, if there's enough daughters that match the pdg and kinematic
           // criteria accept the event
-          if (hasDaughters(daughterIDs, *p, isCC)) accepted = true; 
+          if (hasDaughters(daughterIDs, *p, isCC)) 
+          {
+              accepted = true; 
+              // only need to satisfy the conditions _once_
+              break; 
+          }
         }
-        std::cout << "Has daughters: " << accepted << ", " << hasDaughters(daughterIDs, *p, isCC) << std::endl; 
       }
-      // only need to satisfy the conditions _once_
-      if (accepted)
-        break;
+      
     }
 
-  } else 
+  } 
+  else 
   {
     accepted = true;
   }
 
-  if (accepted) 
-  {
-    return true;
-  } 
-  else 
-  {
-    return false;
-  }
+  return accepted; 
 }
 
 DEFINE_FWK_MODULE(PythiaFilterMultiAncestor);
