@@ -27,6 +27,8 @@ process.jpsi_from_bhadron_filter = cms.EDFilter("PythiaFilterMultiAncestor",
 // system include files
 #include <memory>
 #include <iostream>
+#include <iterator>
+#include <algorithm>
 
 // user include files
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -156,6 +158,9 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
     uint good_dau = 0;
     int idx = -1; 
     bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
+    std::map<int, int> histo; 
+    std::vector<HepMC::GenParticle*> candidates; 
+    candidates.reserve(daughters.size()*2); // A guess, but we can assume we have on average 2 candidates per daughter required 
     for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(relation);
          dau != particle->end_vertex()->particles_end(relation); ++dau) 
     {
@@ -171,11 +176,93 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
               ((*dau)->momentum().eta() > daughterMinEtas[i]) && ((*dau)->momentum().eta() < daughterMaxEtas[i])) 
           {
               ++good_dau; 
+              if (histo.find(i) == histo.end()) candidates.push_back(*dau); // If it is not already, add it to the subset of matching particles
+              histo[i]++; // Checking how many particles could satisfy each daughter requirement
           }
         }
       }
     }
-    return (good_dau >= daughterIDs.size()); 
+
+    assert(histo.size() == candidates.size()); 
+
+
+
+    bool matchDaughters = false; // TODO: maybe add a switch to turn off the next (time consuming) part 
+
+    if (histo.size() >= daughters.size()) // Check that we have at least 1 match per daughter requirement 
+    {
+      // Time for some brute force (chances are high that a combination of preselected particles matches the conditions for the daughters)
+
+
+
+      int k = daughters.size(); 
+      // Snippet taken from: https://stackoverflow.com/questions/28711797/generating-n-choose-k-permutations-in-c
+      std::vector<int> d; 
+      d.reserve(histo.size());
+      int idx = 0; 
+      std::cout << "Map content: "; 
+      for (auto element : histo) 
+      {
+        std::cout << element.first << ", "; 
+        //d[idx] = element.first; 
+        //std::cout << d.at(idx) << "; "; 
+        d.push_back(element.first); 
+        idx++; 
+      }
+      //std::iota(d.begin(),d.end(),1);
+      cout << "These are the Possible Permutations: " << endl;
+      do
+      {
+        int numMatch = 0; 
+        for (int i = 0; i < k; i++)
+        {
+            //auto element = histo.begin(); 
+            //std::advance(element, d[i]);
+            cout << d.at(i) << " "; //element->second << " ";
+
+            const auto daughter = candidates.at(d.at(i)); 
+            if (daughter->pdg_id() == coeff*daughterIDs[i]) 
+            {
+              if ((daughter->momentum().perp() > daughterMinPts[i]) && (daughter->momentum().perp() < daughterMaxPts[i]) && 
+              (daughter->momentum().eta() > daughterMinEtas[i]) && (daughter->momentum().eta() < daughterMaxEtas[i])) 
+              {
+                numMatch++; 
+              }
+            }
+            if (numMatch == k) // All required daughters are matched
+            {
+              matchDaughters = true; 
+              break; 
+            }
+        }
+        cout << endl;
+        std::reverse(d.begin()+k,d.end());
+      } while (next_permutation(d.begin(),d.end()));
+      
+    }
+
+    //   int numtries = 0; 
+    //   while (numtries < 2) // TODO: maybe put here 1 
+    //   {
+    //     numtries++; 
+    //     for (auto element : candidates)
+    //     {
+    //         if (element.second.size() == 1) // If daughter has only one possible particle matching 
+    //         { 
+    //             numtries = 0; 
+    //             candidates.erase(element.first); // Remove this daughter from the list to match
+    //             for (auto collection : candidates) 
+    //             {
+    //               auto content = collection.second; 
+    //               content.erase(std::remove(content.begin(), content.end(), 8), content.end()); // And remove the particle as candidate from the other daughters
+    //             }
+    //         }
+    //     }
+    //   }
+    // Now we have removed any simple matches, but the problem is not really simpler 
+
+
+    return matchDaughters; //(good_dau >= daughterIDs.size()); 
 }
 
 // ------------ method called to produce the data  ------------
