@@ -58,7 +58,7 @@ public:
 private:
   bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj = false) const;
 
-  bool hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, bool chargeConj = false) const; 
+  bool hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, const bool chargeConj = false, const bool direct = false) const; 
 
   const edm::EDGetTokenT<edm::HepMCProduct> token_;
   const int particleID;
@@ -141,19 +141,23 @@ bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDt
   return result;
 }
 
-bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, const bool chargeConj) const 
+bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, const bool chargeConj, const bool direct) const 
 {
     bool result = false; 
 
+    // Set defaults
     int coeff = 1; 
+    auto relation = HepMC::descendants; // We check descendants (direct or with intermediate resonances)
 
+    // Update defaults according to flags 
     if (chargeConj) coeff = -1; 
+    if (direct) relation = HepMC::children; // We require direct daughters 
 
     uint good_dau = 0;
     int idx = -1; 
     bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
-    for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(HepMC::children);
-         dau != particle->end_vertex()->particles_end(HepMC::children); ++dau) 
+    for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(relation);
+         dau != particle->end_vertex()->particles_end(relation); ++dau) 
     {
       idx++; 
       for (unsigned int i = 0; i < daughters.size(); ++i) 
