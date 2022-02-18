@@ -118,7 +118,7 @@ PythiaFilterMultiAncestor::PythiaFilterMultiAncestor(const edm::ParameterSet& iC
       betaBoost(iConfig.getUntrackedParameter("BetaBoost", 0.)), 
       considerCC(iConfig.getUntrackedParameter("ChargeConjugation", true)), 
       directDaughters(iConfig.getUntrackedParameter("DirectDaughters", false)), 
-      directMother(iConfig.getUntrackedParameter("DirecctMother", false)) {
+      directMother(iConfig.getUntrackedParameter("DirectMother", false)) {
   //now do what ever initialization is needed
 }
 
@@ -229,7 +229,6 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
               break; 
             }
         }
-        cout << endl;
         std::reverse(d.begin()+k,d.end());
       } while (next_permutation(d.begin(),d.end()));
       
