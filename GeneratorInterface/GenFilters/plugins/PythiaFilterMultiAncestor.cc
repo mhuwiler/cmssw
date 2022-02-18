@@ -86,7 +86,9 @@ private:
   const int processID;
 
   const double betaBoost;
-  const bool considerCC = true; // TODO: change to an option 
+  const bool considerCC; 
+
+  const bool directDaughters; 
 
 };
 
@@ -112,7 +114,9 @@ PythiaFilterMultiAncestor::PythiaFilterMultiAncestor(const edm::ParameterSet& iC
       daughterMinEtas(iConfig.getUntrackedParameter("DaughterMinEtas", std::vector<double>{-10.})),
       daughterMaxEtas(iConfig.getUntrackedParameter("DaughterMaxEtas", std::vector<double>{10.})),
       processID(iConfig.getUntrackedParameter("ProcessID", 0)),
-      betaBoost(iConfig.getUntrackedParameter("BetaBoost", 0.)) {
+      betaBoost(iConfig.getUntrackedParameter("BetaBoost", 0.)), 
+      considerCC(iConfig.getUntrackedParameter("ChargeConjugation", true)), 
+      directDaughters(iConfig.getUntrackedParameter("DirectDaughters", false)) {
   //now do what ever initialization is needed
 }
 
@@ -306,7 +310,7 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
           // now let's check the daughters
           // use a counter, if there's enough daughters that match the pdg and kinematic
           // criteria accept the event
-          if (hasDaughters(daughterIDs, *p, isCC)) 
+          if (hasDaughters(daughterIDs, *p, isCC, directDaughters)) 
           {
               accepted = true; 
               // only need to satisfy the conditions _once_
