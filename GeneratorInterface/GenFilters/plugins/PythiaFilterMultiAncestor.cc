@@ -155,7 +155,6 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
     if (chargeConj) coeff = -1; 
     if (direct) relation = HepMC::children; // We require direct daughters 
 
-    uint good_dau = 0;
     int idx = -1; 
     bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
     std::map<int, int> histo; 
@@ -175,7 +174,6 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
           if (((*dau)->momentum().perp() > daughterMinPts[i]) && ((*dau)->momentum().perp() < daughterMaxPts[i]) && 
               ((*dau)->momentum().eta() > daughterMinEtas[i]) && ((*dau)->momentum().eta() < daughterMaxEtas[i])) 
           {
-              ++good_dau; 
               if (histo.find(i) == histo.end()) candidates.push_back(*dau); // If it is not already, add it to the subset of matching particles
               histo[i]++; // Checking how many particles could satisfy each daughter requirement
           }
@@ -186,40 +184,26 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
     assert(histo.size() == candidates.size()); 
 
 
-
     bool matchDaughters = false; // TODO: maybe add a switch to turn off the next (time consuming) part 
 
     if (histo.size() >= daughters.size()) // Check that we have at least 1 match per daughter requirement 
     {
       // Time for some brute force (chances are high that a combination of preselected particles matches the conditions for the daughters)
 
-
-
       int k = daughters.size(); 
       // Snippet taken from: https://stackoverflow.com/questions/28711797/generating-n-choose-k-permutations-in-c
       std::vector<int> d; 
       d.reserve(histo.size());
-      int idx = 0; 
-      std::cout << "Map content: "; 
       for (auto element : histo) 
       {
-        std::cout << element.first << ", "; 
-        //d[idx] = element.first; 
-        //std::cout << d.at(idx) << "; "; 
         d.push_back(element.first); 
-        idx++; 
       }
-      //std::iota(d.begin(),d.end(),1);
-      cout << "These are the Possible Permutations: " << endl;
+
       do
       {
         int numMatch = 0; 
         for (int i = 0; i < k; i++)
         {
-            //auto element = histo.begin(); 
-            //std::advance(element, d[i]);
-            cout << d.at(i) << " "; //element->second << " ";
-
             const auto daughter = candidates.at(d.at(i)); 
             if (daughter->pdg_id() == coeff*daughterIDs[i]) 
             {
