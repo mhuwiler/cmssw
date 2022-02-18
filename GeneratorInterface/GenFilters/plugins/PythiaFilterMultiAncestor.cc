@@ -58,7 +58,7 @@ public:
   bool filter(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
 
 private:
-  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj = false, bool direct = false) const;
+  bool isAncestor(const HepMC::GenParticle* particle, const int IDtoMatch, const bool chargeConj = false, const bool direct = false) const;
 
   bool hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, const bool chargeConj = false, const bool direct = false) const; 
 
@@ -123,7 +123,7 @@ PythiaFilterMultiAncestor::PythiaFilterMultiAncestor(const edm::ParameterSet& iC
 }
 
 // ------------ access the full genealogy ---------
-bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj, bool direct) const 
+bool PythiaFilterMultiAncestor::isAncestor(const HepMC::GenParticle* particle, const int IDtoMatch, const bool chargeConj, const bool direct) const 
 {
   bool result = false; 
 
