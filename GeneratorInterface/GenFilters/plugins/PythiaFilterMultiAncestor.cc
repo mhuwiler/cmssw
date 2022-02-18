@@ -58,7 +58,7 @@ public:
   bool filter(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
 
 private:
-  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj = false) const;
+  bool isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj = false, bool direct = false) const;
 
   bool hasDaughters(const std::vector<int>& daughters, const HepMC::GenParticle* particle, const bool chargeConj = false, const bool direct = false) const; 
 
@@ -89,6 +89,7 @@ private:
   const bool considerCC; 
 
   const bool directDaughters; 
+  const bool directMother; 
 
 };
 
@@ -116,17 +117,22 @@ PythiaFilterMultiAncestor::PythiaFilterMultiAncestor(const edm::ParameterSet& iC
       processID(iConfig.getUntrackedParameter("ProcessID", 0)),
       betaBoost(iConfig.getUntrackedParameter("BetaBoost", 0.)), 
       considerCC(iConfig.getUntrackedParameter("ChargeConjugation", true)), 
-      directDaughters(iConfig.getUntrackedParameter("DirectDaughters", false)) {
+      directDaughters(iConfig.getUntrackedParameter("DirectDaughters", false)), 
+      directMother(iConfig.getUntrackedParameter("DirecctMother", false)) {
   //now do what ever initialization is needed
 }
 
 // ------------ access the full genealogy ---------
-bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj) const 
+bool PythiaFilterMultiAncestor::isAncestor(HepMC::GenParticle* particle, int IDtoMatch, bool chargeConj, bool direct) const 
 {
   bool result = false; 
 
-  for (HepMC::GenVertex::particle_iterator ancestor = particle->production_vertex()->particles_begin(HepMC::ancestors);
-       ancestor != particle->production_vertex()->particles_end(HepMC::ancestors); ++ancestor) // If multiple mothers with same ID are required, will return true possibly on the same particle 
+  auto relation = HepMC::ancestors; 
+
+  if (direct) relation = HepMC::parents; 
+
+  for (HepMC::GenVertex::particle_iterator ancestor = particle->production_vertex()->particles_begin(relation);
+       ancestor != particle->production_vertex()->particles_end(relation); ++ancestor) // If multiple mothers with same ID are required, will return true possibly on the same particle 
   {
     // std::cout << __LINE__ << "]\t particle's PDG ID " << particle->pdg_id()
     //                       << " \t particle's ancestor's PDG ID " << (*ancestor)->pdg_id()
@@ -299,7 +305,7 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
         bool momFound = motherIDs.empty(); 
         for (std::vector<int>::const_iterator motherID = motherIDs.begin(); motherID != motherIDs.end(); ++motherID) 
         {
-          if (isAncestor(*p, *motherID, isCC)) momFound = true; // If one of moms is found, set to true 
+          if (isAncestor(*p, *motherID, isCC, directMother)) momFound = true; // If one of moms is found, set to true 
 
         }
 
