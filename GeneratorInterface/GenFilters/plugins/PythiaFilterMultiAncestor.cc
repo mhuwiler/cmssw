@@ -161,7 +161,7 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
 
     int idx = -1; 
     bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
-    std::map<int, int> histo; 
+    std::map<int, int> histo; // TODO: do this logic prer pdgid 
     std::vector<HepMC::GenParticle*> candidates; 
     candidates.reserve(daughters.size()*2); // A guess, but we can assume we have on average 2 candidates per daughter required 
     for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(relation);
@@ -296,10 +296,10 @@ bool PythiaFilterMultiAncestor::filter(edm::StreamID, edm::Event& iEvent, const 
         bool statusPass = ((status == 0) || ((*p)->status() == status)); 
 
         // find the mother
-        bool momFound = false; 
+        bool momFound = motherIDs.empty(); 
         for (std::vector<int>::const_iterator motherID = motherIDs.begin(); motherID != motherIDs.end(); ++motherID) 
         {
-          if ((*motherID == 0) || isAncestor(*p, *motherID, isCC)) momFound = true; // If one of moms is found, set to true 
+          if (isAncestor(*p, *motherID, isCC)) momFound = true; // If one of moms is found, set to true 
 
         }
 
