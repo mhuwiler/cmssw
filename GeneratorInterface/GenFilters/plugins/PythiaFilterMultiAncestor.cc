@@ -167,10 +167,9 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
 
     int idx = -1; 
     bool matchingTable[particle->end_vertex()->particles_out_size()][daughters.size()]; 
-    std::map<int, int> histo; // TODO: do this logic prer pdgid 
+    std::map<int, int> histo; 
     std::vector<HepMC::GenParticle*> candidates; 
     std::map<int, std::pair<std::set<int>, std::set<HepMC::GenParticle*> > > candsPerPID; 
-    std::map<int, std::set<int> > requirementsPerPID; // TODO: merge into a map of pairs of sets 
     candidates.reserve(daughters.size()*2); // A guess, but we can assume we have on average 2 candidates per daughter required 
     for (HepMC::GenVertex::particle_iterator dau = particle->end_vertex()->particles_begin(relation);
          dau != particle->end_vertex()->particles_end(relation); ++dau) 
@@ -179,7 +178,6 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
       for (unsigned int i = 0; i < daughters.size(); ++i) 
       {
         // if a daughter has its pdgID among the desired ones, apply kin cuts on it
-        // if it survives, add a notch to the counter
         int pdgid = (*dau)->pdg_id(); 
         if (pdgid == coeff*daughterIDs[i]) 
         {
@@ -197,7 +195,6 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
     }
 
     assert(histo.size() == candidates.size()); 
-    //assert(candsPerPID.size() == requirementsPerPID.size()); 
 
 
     bool matchDaughters = false; // TODO: maybe add a switch to turn off the next (time consuming) part 
@@ -206,25 +203,19 @@ bool PythiaFilterMultiAncestor::hasDaughters(const std::vector<int>& daughters, 
     {
       for (auto element : candsPerPID) 
       {
-        //assert(requirementsPerPID.find(element.first) != requirementsPerPID.end()); // Check that the maps have the same keys
-        //assert(element.second.size() == requirementsPerPID.at(element.first).size()); // check that each element's value has the same size
         // Remove cases where there is a single candidate 
         if (element.second.second.size() < element.second.first.size()) return false; // We have less candidates than required 
         if (element.second.first.size() <= 1) // Only one required 
         {
           candsPerPID.erase(element.first); 
-          //requirementsPerPID.erase(element.first); 
         }
       }
-
       // Time for some brute force (chances are high that a combination of preselected particles matches the conditions for the daughters)
 
       std::vector<bool> matchForPID(candsPerPID.size(), false);
       int idx = 0; 
       for (auto item : candsPerPID) 
       {
-        //int pdgid = item.first; 
-        //const auto candidates = std::vector<HepMC::GenParticle*>(item.second.second.begin(), item.second.second.end()); 
         const auto requirements = std::vector<int>(item.second.first.begin(), item.second.first.end()); 
         int k = requirements.size(); 
         // Snippet taken from: https://stackoverflow.com/questions/28711797/generating-n-choose-k-permutations-in-c
