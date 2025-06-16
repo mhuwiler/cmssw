@@ -12,7 +12,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('file:inputs131X_1.root'),
+    fileNames = cms.untracked.vstring('file:inputs131X_withPixelsFirst.root'),
     inputCommands = cms.untracked.vstring("keep *", 
             "drop l1tPFClusters_*_*_*",
             "drop l1tPFTracks_*_*_*",
@@ -428,6 +428,29 @@ def addGen(pdgs):
                         name = process.genPiTable.name
             )
             process.extraPFStuff.add(process.genPiTable, process.genPiExtTable)
+
+def addPixelTracks():
+    process.pixelTracksTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+        src = cms.InputTag("pixelTracks"),
+        cut = cms.string(""), #we should not filter after pruning
+        name = cms.string("pixelTracks"),
+        doc = cms.string("pixelTracks reconstructed with the Heterogeneous reconstruction at the HLT"),
+        singleton = cms.bool(False), # the number of entries is variable
+        extension = cms.bool(False), # this is the extension table for the AK8 constituents
+        variables = cms.PSet(
+            pt = Var("pt", float, doc="Transverse momentum",precision=8),
+            eta = Var("eta", float, doc="eta coordinate",precision=8),
+            phi = Var("phi", float, doc="phi coordinate",precision=8),
+            #q = Var("q", int, doc="charge", precision=8),
+            #z0 = Var("z0", float, doc="longitudinal displacement", precision=8),
+            #lxy = Var("dxy", float, doc="transverse displacement", precision=8),
+            #chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
+            #ndof = Var("ndof", float, doc="track fit ndof", precision=8),
+
+        ),
+    )
+    #setattr(process, 'pixelTracks_', pixelTracksTable)
+    process.extraPFStuff.add(process.pixelTracksTable) #process.customConstituentsExtTable
 
 def addGenPi(pdgs=[211]):
     addGen(pdgs)
@@ -847,3 +870,5 @@ if False:
         getattr(process, 'l1tLayer1'+R).pfAlgoParameters.debug = True
 
 # open("debugDumpJetNTuple.py", "w").write(process.dumpPython())
+
+addPixelTracks()

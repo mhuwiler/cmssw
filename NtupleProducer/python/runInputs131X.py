@@ -37,8 +37,8 @@ process.source = cms.Source("PoolSource",
         #'drop triggerTriggerFilterObjectWithRefs_*_*_HLT'
     ),
 )
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200))
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200))
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5))
 process.options = cms.untracked.PSet(
         wantSummary = cms.untracked.bool(True),
         #numberOfThreads = cms.untracked.uint32(4),
