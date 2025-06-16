@@ -398,8 +398,8 @@ def addPixelTracks():
             eta = Var("eta", float, doc="eta coordinate",precision=8),
             phi = Var("phi", float, doc="phi coordinate",precision=8),
             q = Var("charge", int, doc="charge", precision=8),
-            #z0 = Var("z0", float, doc="longitudinal displacement", precision=8),
-            #lxy = Var("dxy", float, doc="transverse displacement", precision=8),
+            dz = Var("dz", float, doc="longitudinal displacement", precision=8),
+            dxy = Var("dxy", float, doc="transverse displacement", precision=8),
             chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
             ndof = Var("ndof", float, doc="track fit ndof", precision=8),
 
