@@ -430,7 +430,7 @@ def addGen(pdgs):
             process.extraPFStuff.add(process.genPiTable, process.genPiExtTable)
 
 def addPixelTracks():
-    process.pixelTracksTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    process.pixelTracksTable = cms.EDProducer("SimpleTrackFlatTableProducer",
         src = cms.InputTag("pixelTracks"),
         cut = cms.string(""), #we should not filter after pruning
         name = cms.string("pixelTracks"),
