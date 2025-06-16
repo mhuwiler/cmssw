@@ -33,11 +33,12 @@ process.source = cms.Source("PoolSource",
         'drop l1tPFJets_*_*_*',
         'drop l1tPFTaus_*_*_*',
         'drop l1tTrackerMuons_*_*_*',
-        'drop *_hlt*_*_HLT',
-        'drop triggerTriggerFilterObjectWithRefs_*_*_HLT'
+        #'drop *_hlt*_*_HLT',
+        #'drop triggerTriggerFilterObjectWithRefs_*_*_HLT'
     ),
 )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200))
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5))
 process.options = cms.untracked.PSet(
         wantSummary = cms.untracked.bool(True),
         #numberOfThreads = cms.untracked.uint32(4),
@@ -143,6 +144,7 @@ process.out = cms.OutputModule("PoolOutputModule",
             "keep *_l1tKMTFMuonsGmt_*_*",
             "keep *_l1tFwdMuonsGmt_*_*",
             "keep *_l1tSAMuonsGmt_*_*",
+            "keep *_pixelTracks_*_*",
         ),
         compressionAlgorithm = cms.untracked.string('LZMA'),
         compressionLevel = cms.untracked.int32(4),
