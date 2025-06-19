@@ -6,6 +6,9 @@ typedef SimpleFlatTableProducer<reco::Candidate> SimpleCandidateFlatTableProduce
 #include "DataFormats/TrackReco/interface/Track.h"
 typedef SimpleFlatTableProducer<reco::Track> SimpleTrackFlatTableProducer;
 
+#include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
+typedef SimpleFlatTableProducer<TrackingRecHit> SimpleRecHitFlatTableProducer;
+
 #include "DataFormats/JetReco/interface/PFJet.h"
 typedef SimpleFlatTableProducer<reco::PFJet> SimplePFJetFlatTableProducer;
 
@@ -61,3 +64,4 @@ DEFINE_FWK_MODULE(SimpleLocalTrackFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleXYZPointFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleOnlineLuminosityFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleBeamspotFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleRecHitFlatTableProducer);
