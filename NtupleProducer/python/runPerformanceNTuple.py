@@ -408,6 +408,29 @@ def addPixelTracks():
     #setattr(process, 'pixelTracks_', pixelTracksTable)
     process.extraPFStuff.add(process.pixelTracksTable) #process.customConstituentsExtTable
 
+def addPixelRecHits():
+    process.pixelRecHitsTable = cms.EDProducer("SimpleRecHitFlatTableProducer",
+        src = cms.InputTag("pixelTracks"),
+        cut = cms.string(""), #we should not filter after pruning
+        name = cms.string("pixelRecHits"),
+        doc = cms.string("pixel RecHits reconstructed with the Heterogeneous reconstruction at the HLT"),
+        singleton = cms.bool(False), # the number of entries is variable
+        extension = cms.bool(False), # this is the extension table for the AK8 constituents
+        variables = cms.PSet(
+            #globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
+            #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
+            #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
+            #localX = Var("charge", int, doc="charge", precision=8),
+            detId = Var("geographicalId().rawId()", float, doc="DetId of the module the hit is located in", precision=8),
+            #dxy = Var("dxy", float, doc="transverse displacement", precision=8),
+            #chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
+            #ndof = Var("ndof", float, doc="track fit ndof", precision=8),
+
+        ),
+    )
+    #setattr(process, 'pixelTracks_', pixelRecHitsTable)
+    process.extraPFStuff.add(process.pixelRecHitsTable) #process.customConstituentsExtTable
+
 def addGenPi(pdgs=[211]):
     addGen(pdgs)
 
@@ -799,3 +822,4 @@ def saveGenCands():
     process.p += process.gencandTable
 
 addPixelTracks()
+addPixelRecHits()
