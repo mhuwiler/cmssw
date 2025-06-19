@@ -464,6 +464,7 @@ def addPixelRecHits():
             #globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
             #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
             #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
+            hasGlobal = Var("hasPositionAndError()", float, doc="bool telling if global positions are saved",precision=8),
             #localX = Var("charge", int, doc="charge", precision=8),
             detId = Var("geographicalId().rawId()", float, doc="DetId of the module the hit is located in", precision=8),
             #dxy = Var("dxy", float, doc="transverse displacement", precision=8),
