@@ -452,6 +452,7 @@ def addPixelTracks():
             rechit3 = Var("?recHitsSize>2?recHit(2).geographicalId().rawId():-999", int, doc="DetId of the third RecHit associated to this track", precision=8),
             rechit4 = Var("?recHitsSize>3?recHit(3).geographicalId().rawId():-999", int, doc="DetId of the fourth RecHit associated to this track", precision=8),
             rechit5 = Var("?recHitsSize>4?recHit(4).geographicalId().rawId():-999", int, doc="DetId of the fifth RecHit associated to this track (there should only be 4 RecHits for pixel tracks)", precision=8),
+            rechitpos = Var("?recHitsSize>0?recHit(0).hasPositionAndError():-999", int, doc="Check if RecHits have global position", precision=8),
 
         ),
     )
