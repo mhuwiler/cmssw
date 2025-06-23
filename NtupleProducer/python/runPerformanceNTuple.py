@@ -447,6 +447,7 @@ def addPixelTracks():
             chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
             ndof = Var("ndof", float, doc="track fit ndof", precision=8),
             rechits = Var("recHitsSize", int, doc="size of the associated RecHit collection", precision=8),
+            rechit1 = Var("?recHitsSize>0?recHit(0).geographicalId().rawId():-999", int, doc="size of the associated RecHit collection", precision=8),
 
         ),
     )
@@ -467,7 +468,7 @@ def addPixelRecHits():
             #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
             hasGlobal = Var("hasPositionAndError()", float, doc="bool telling if global positions are saved",precision=8),
             #localX = Var("charge", int, doc="charge", precision=8),
-            detId = Var("geographicalId().rawId()", float, doc="DetId of the module the hit is located in", precision=8),
+            detId = Var("geographicalId().rawId()", int, doc="DetId of the module the hit is located in", precision=8),
             #dxy = Var("dxy", float, doc="transverse displacement", precision=8),
             #chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
             #ndof = Var("ndof", float, doc="track fit ndof", precision=8),
