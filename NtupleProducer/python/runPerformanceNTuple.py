@@ -446,6 +446,7 @@ def addPixelTracks():
             dxy = Var("dxy", float, doc="transverse displacement", precision=8),
             chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
             ndof = Var("ndof", float, doc="track fit ndof", precision=8),
+            rechits = Var("recHitsSize", int, doc="size of the associated RecHit collection", precision=8),
 
         ),
     )
