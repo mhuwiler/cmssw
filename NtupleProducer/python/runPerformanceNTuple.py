@@ -486,6 +486,13 @@ def addPixelRecHits():
     #setattr(process, 'pixelTracks_', pixelRecHitsTable)
     process.extraPFStuff.add(process.pixelRecHitsTable) #process.customConstituentsExtTable
 
+def addPixelInformation(): 
+    process.globalHitProducer = cms.EDProducer("GlobalPositionProducer",
+        src = cms.InputTag('pixelTracks'),  # or MiniAOD source
+        geometry = cms.ESInputTag("", "TrackerGeometry")
+    )
+    addPixelRecHits()
+
 def addGenPi(pdgs=[211]):
     addGen(pdgs)
 
@@ -907,3 +914,4 @@ if False:
 
 addPixelTracks()
 addPixelRecHits()
+addPixelInformation()
