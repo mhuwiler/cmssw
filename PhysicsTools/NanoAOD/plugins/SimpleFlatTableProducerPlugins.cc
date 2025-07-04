@@ -9,6 +9,10 @@ typedef SimpleFlatTableProducer<reco::Track> SimpleTrackFlatTableProducer;
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
 typedef SimpleFlatTableProducer<TrackingRecHit> SimpleRecHitFlatTableProducer;
 
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
+#include "DataFormats/Common/interface/ValueMap.h"
+typedef SimpleFlatTableProducer<edm::ValueMap<GlobalPoint> > SimpleRecHitGlobalPosFlatTableProducer; 
+
 #include "DataFormats/JetReco/interface/PFJet.h"
 typedef SimpleFlatTableProducer<reco::PFJet> SimplePFJetFlatTableProducer;
 
@@ -65,3 +69,4 @@ DEFINE_FWK_MODULE(SimpleXYZPointFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleOnlineLuminosityFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleBeamspotFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRecHitFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleRecHitGlobalPosFlatTableProducer);
