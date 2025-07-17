@@ -56,9 +56,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     auto clue_collection = CLUEsteringCollection(n_points, event.queue());
     //clue_collection.zeroInitialise(event.queue());
 
+    // Hack to fill the cluster collection with a random number between -1 and 5 
+    #include <random>
+    std::random_device rd;
+    std::mt19937 gen(rd());  // Mersenne Twister engine
+
+    // Define the integer distribution in range [-1, 5]
+    std::uniform_int_distribution<int> dist(-1, 5);
+
+
     for (auto i = 0; i < clue_collection.view().metadata().size(); i++) 
     {
-      clue_collection.view().cluster()[i] = 1; 
+      clue_collection.view().cluster()[i] = dist(gen); 
     }
 
     // // extract device pointers? 
