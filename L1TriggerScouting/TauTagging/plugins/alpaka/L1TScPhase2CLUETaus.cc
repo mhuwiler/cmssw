@@ -54,7 +54,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
     // allocate buffer for CLUEstering results
     auto clue_collection = CLUEsteringCollection(n_points, event.queue());
-    clue_collection.zeroInitialise(event.queue());
+    //clue_collection.zeroInitialise(event.queue());
+
+    for (auto i = 0; i < clue_collection.view().metadata().size(); i++) 
+    {
+      clue_collection.view().cluster()[i] = 1; 
+    }
 
     // // extract device pointers? 
     // auto coords_ptr = reinterpret_cast<std::byte*>(const_cast<float*>(pf_candidates.const_view().eta()));
