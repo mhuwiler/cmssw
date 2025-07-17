@@ -8,8 +8,8 @@
 namespace l1sc {
 
   GENERATE_SOA_LAYOUT(CLUEsteringLayout,
-                      SOA_COLUMN(uint32_t, cluster),
-                      SOA_COLUMN(uint32_t, is_seed))
+                      SOA_COLUMN(int16_t, cluster),
+                      SOA_COLUMN(int16_t, is_seed))
 
   using CLUEsteringSoA = CLUEsteringLayout<>;
   using CLUEsteringSoAView = CLUEsteringSoA::View;
