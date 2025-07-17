@@ -40,6 +40,8 @@
 //
 // class declaration
 //
+constexpr int batchsize = 16; 
+
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
@@ -115,6 +117,31 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     //using namespace edm;
 
     const auto& pf = event.get(pf_token_);
+
+    const auto& clusters = event.get(clusters_token_);
+
+    const int32_t n = clusters.view().metadata().size(); 
+
+    uint32_t numJets = 0; 
+
+    for (int32_t i=0; i<n; i++) 
+    {
+
+      // Accessing the column "cluster" by its name as a finctional
+      auto a = clusters.view().cluster()[i]; 
+
+      std::cout << a << std::endl; 
+
+      if (a > numJets) numJets = a; 
+    }
+
+
+
+    int nConst = batchsize*numJets; 
+
+    // creating the output collection
+    auto jets = TauClusterCollection(nConst, event.queue());
+    jets.zeroInitialise(event.queue());
   
   }
 
