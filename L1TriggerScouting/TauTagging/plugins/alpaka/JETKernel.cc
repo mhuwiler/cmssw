@@ -1,0 +1,110 @@
+// Check that ALPAKA_HOST_ONLY is not defined during device compilation:
+#ifdef ALPAKA_HOST_ONLY
+#error ALPAKA_HOST_ONLY defined in device compilation
+#endif
+
+#include "HeterogeneousCore/AlpakaInterface/interface/config.h"
+#include "HeterogeneousCore/AlpakaInterface/interface/workdivision.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/CLUEsteringCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateCollection.h"
+//#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Utils.h"
+//#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
+
+
+namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
+
+using namespace cms::alpakatools;
+
+
+class JETConcatenationKernel 
+{
+public: 
+	template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
+  	ALPAKA_FN_ACC void operator()(TAcc const& acc, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const uint32_t clusters_num) const 
+  	{
+    	std::cout << "Starting kernel" << std::endl; 
+
+    	//using Dim = alpaka::Dim<TAcc>;
+        //using Idx = alpaka::Idx<TAcc>;
+    	using Vec = alpaka::Vec<alpaka::Dim<TAcc>, alpaka::Idx<TAcc> >;
+        using Vec1D = alpaka::Vec<alpaka::DimInt<1u>, alpaka::Idx<TAcc> >;
+
+    	Vec const globalThreadIdx = alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+        Vec const globalThreadExtent = alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc);
+
+        // Map the three dimensional thread index into a
+        // one dimensional thread index space. We call it
+        // linearize the thread index.
+        Vec1D const idx = alpaka::mapIdx<1u>(globalThreadIdx, globalThreadExtent);
+
+
+
+        // Loop over the PF collection, and extract the candidates with cluster number matching the thread number
+        // TODO: make sure only nJets threads operate
+
+        if (idx > clusters_num) return; 
+
+
+        const int N = 128; 
+
+        // Extracting the indices and the corresponding pt values from the PF candidates matching the cluster number
+        int indices[N] = -1; 
+        int *ind = &indices; 
+
+        float pt[N] = -999; 
+        float *currentpt = &pt; 
+
+        for (uint32_t i = 0; i < pf.view().metadata().size(); i++) 
+        {
+        	if (clusters.view().cluster()[i] == idx) //copy the PF locally
+        	{
+        		&ind = i; 
+        		ind++; 
+        		&currentpt = pf.view().pt()[i]; 
+        		currentpt++; 
+        	}
+        }
+
+
+        // Sorting the arrays according to pT 
+        insertionSort(pt, N); 
+
+        for (uint32_t i = 0; i < N; i++) 
+        {
+        	std::cout << "Pt value " << pt[i] << std::endl; 
+        }
+
+
+    }
+
+    // Insertion sorting
+    ALPAKA_FN_ACC void insertionSort(float* data, int N) const
+    {
+    	for (int i = 1; i < N; ++i) 
+    	{
+    		float key = data[i];
+    		int j = i - 1;
+    		while (j >= 0 && data[j] > key) 
+    		{
+    			data[j + 1] = data[j];
+    			--j;
+    		}
+    		data[j + 1] = key;
+    	}
+    }
+
+};
+
+
+// Function to launch the kernel
+void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const uint32_t clusters_num) 
+{
+  uint32_t threads_per_block = clusters_num;
+  uint32_t blocks_per_grid = 1;        
+  auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
+  alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view(), clusters_num);
+  alpaka::wait(queue);
+}
+
+
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
