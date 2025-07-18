@@ -36,7 +36,8 @@
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "L1TriggerScouting/TauTagging/interface/L1TScPhase2Common.h"
-#include "L1TriggerScouting/TauTagging/plugins/alpaka/JETKernel.cc"
+//#include "L1TriggerScouting/TauTagging/plugins/alpaka/JETKernel.cc"
+#include "L1TriggerScouting/TauTagging/interface/alpaka/JETConcatenation.h"
 
 //
 // class declaration
@@ -139,7 +140,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     numJets +=1; // numbering of clusters starts at 0
 
 
-    JETConcatenationKernel concatenate; 
+    //JETConcatenationKernel concatenate; 
+
+
+    /*alpaka::exec<Tag>(
+        event.queue(),
+        workDiv,
+        concatenate, 
+        pf, 
+        clusters, 
+        nJets);
+    alpaka::wait(event.queue()); */
+    //JETConcatenation concat; 
+
+    Concatenate(event.queue(), pf, clusters, numJets);
 
 
 
