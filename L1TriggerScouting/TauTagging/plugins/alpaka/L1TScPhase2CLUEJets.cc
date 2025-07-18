@@ -135,6 +135,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
       if (a > numJets) numJets = a; 
     }
 
+    numJets +=1; // numbering of clusters starts at 0
+
 
 
     int nConst = batchsize*numJets; 
