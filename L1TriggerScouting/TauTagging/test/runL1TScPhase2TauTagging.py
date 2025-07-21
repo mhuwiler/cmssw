@@ -4,11 +4,8 @@ from L1TriggerScouting.TauTagging.options_cff import args
 from L1TriggerScouting.TauTagging.modules import (
     l1sc_L1TScPhase2PFCandidatesAoSToSoA_alpaka,
     l1sc_L1TScPhase2CLUETaus_alpaka,
-<<<<<<< HEAD
-    l1sc_L1TScPhase2CLUEJets_alpaka
-=======
+    l1sc_L1TScPhase2CLUEJets_alpaka,
     l1sc_L1TScPhase2DirectInference_alpaka
->>>>>>> lukasz/ml@l1
 )
 
 
@@ -72,19 +69,15 @@ process.TauClusters = l1sc_L1TScPhase2CLUEJets_alpaka(
     ),
     pf = "PFCandidatesAoSToSoA", 
     clusters = "CLUETaus",
-    debug = cms.untracked.bool(args.debug)
+    debug = cms.untracked.bool(True)
 )
 
 # schedule the modules
 process.path = cms.Path(
     process.PFCandidatesAoSToSoA +
-<<<<<<< HEAD
     process.CLUETaus +
     process.TauClusters
-=======
-    process.CLUETaus + 
-    process.DirectInference
->>>>>>> lukasz/ml@l1
+    #process.DirectInference
 )
 
 # do not needed - framework will run path automatically if there is only one 
