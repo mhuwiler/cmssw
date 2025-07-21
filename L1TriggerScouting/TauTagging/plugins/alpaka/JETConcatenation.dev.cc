@@ -14,7 +14,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 using namespace cms::alpakatools;
 
 
-// Insertion sorting
+/*// Insertion sorting
     ALPAKA_FN_ACC void insertionSort(float* data, int N)
     {
       for (int i = 1; i < N; ++i) 
@@ -28,23 +28,23 @@ using namespace cms::alpakatools;
         }
         data[j + 1] = key;
       }
-    }
+    }*/
 
 
 class JETConcatenationKernel 
 {
 public: 
-	template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
-  	ALPAKA_FN_ACC void operator()(TAcc const& acc, PFCandidateCollection::ConstView& pf, CLUEsteringCollection::ConstView& clusters, const uint32_t clusters_num) const 
-  	{
-    	printf("Starting kernel"); 
+  //template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
+    ALPAKA_FN_ACC void operator()(const Acc1D& acc, PFCandidateCollection::ConstView pf, CLUEsteringCollection::ConstView clusters) const 
+    {
+      printf("Starting kernel"); 
 
-    	//using Dim = alpaka::Dim<TAcc>;
+      /*//using Dim = alpaka::Dim<TAcc>;
         //using Idx = alpaka::Idx<TAcc>;
-    	using Vec = alpaka::Vec<alpaka::Dim<TAcc>, alpaka::Idx<TAcc> >;
+      using Vec = alpaka::Vec<alpaka::Dim<TAcc>, alpaka::Idx<TAcc> >;
       using Vec1D = alpaka::Vec<alpaka::DimInt<1u>, alpaka::Idx<TAcc> >;
 
-    	Vec const globalThreadIdx = alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc);
+      Vec const globalThreadIdx = alpaka::getIdx<alpaka::Grid, alpaka::Threads>(acc);
         Vec const globalThreadExtent = alpaka::getWorkDiv<alpaka::Grid, alpaka::Threads>(acc);
 
         // Map the three dimensional thread index into a
@@ -53,11 +53,29 @@ public:
         uint32_t const idx = alpaka::mapIdx<1u>(globalThreadIdx, globalThreadExtent).front();
 
 
+        // First get the number of clusters
+        // TODO: have it produced as metadata by the clustering
+        uint32_t numJets = 0; 
+
+        for (int32_t i=0; i<pf.metadata().size(); i++) 
+        {
+
+          // Accessing the column "cluster" by its name as a finctional
+          auto a = clusters.cluster()[i]; 
+
+          printf("Cluster number %f", a); 
+
+          if (a > numJets) numJets = a; 
+        }
+
+        numJets +=1; // numbering of clusters starts at 0
+
+
 
         // Loop over the PF collection, and extract the candidates with cluster number matching the thread number
         // TODO: make sure only nJets threads operate
 
-        if (idx > clusters_num) return; 
+        if (idx > numJets) return; 
 
 
         const int N = 128; 
@@ -71,13 +89,13 @@ public:
 
         for (int i = 0; i < pf.metadata().size(); i++) 
         {
-        	if (clusters.cluster()[i] == idx) //copy the PF locally
-        	{
-        		*ind = i; 
-        		ind++; 
-        		*currentpt = pf.pt()[i]; 
-        		currentpt++; 
-        	}
+          if (clusters.cluster()[i] == idx) //copy the PF locally
+          {
+            *ind = i; 
+            ind++; 
+            *currentpt = pf.pt()[i]; 
+            currentpt++; 
+          }
         }
 
 
@@ -86,23 +104,36 @@ public:
 
         for (uint32_t i = 0; i < N; i++) 
         {
-        	printf("Pt value %f", pt[i]); 
+          printf("Pt value %f", pt[i]); 
         }
-
+*/
 
     }
 
 };
 
+/*
+class JETConcatenationKernel {
+  public:
+    ALPAKA_FN_ACC void operator()(const Acc1D& acc, PFCandidateCollection::ConstView pf_candidates, CLUEsteringCollection::ConstView clue_collection) const {
+      if (once_per_grid(acc)) {
+        printf("ConcatenateKernel OK\n");
+      }
+    }
+  };
+  */
+
 
 // Function to launch the kernel
-void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const uint32_t clusters_num) 
+//template <typename TAcc>
+void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const int Nclusters) 
 {
-  uint32_t threads_per_block = clusters_num;
+  uint32_t threads_per_block = Nclusters;
   uint32_t blocks_per_grid = 1;        
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
-  alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view(), clusters_num);
-  alpaka::wait(queue);
+  //alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
+  alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
+  //alpaka::wait(queue);
 }
 
 

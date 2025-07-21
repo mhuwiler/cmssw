@@ -12,7 +12,8 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 
 
-extern void  Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const uint32_t clusters_num); 
+//template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
+void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const int clusters_num); 
 
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
