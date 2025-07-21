@@ -15,18 +15,21 @@ using namespace cms::alpakatools;
 
 
 // Insertion sorting
-    ALPAKA_FN_ACC void insertionSort(float* data, int N)
+    ALPAKA_FN_ACC void insertionSort(float* data, int* spectator, int N)
     {
       for (int i = 1; i < N; ++i) 
       {
         float key = data[i];
+        int temp = spectator[i];
         int j = i - 1;
         while (j >= 0 && data[j] < key) 
         {
           data[j + 1] = data[j];
+          spectator[j + 1] = spectator[j]; 
           --j;
         }
         data[j + 1] = key;
+        spectator[j + 1] = temp; 
       }
     }
 
@@ -99,12 +102,17 @@ public:
         }
 
 
+        for (uint32_t i = 0; i < N; i++) 
+        {
+          printf("Pt value %f, index: %d\n", pt[i], indices[i]); 
+        }
+
         // Sorting the arrays according to pT 
-        insertionSort(pt, N); 
+        insertionSort(pt, indices, N); 
 
         for (uint32_t i = 0; i < N; i++) 
         {
-          printf("Pt value %f\n", pt[i]); 
+          printf("Pt value %f, index: %d\n", pt[i], indices[i]); 
         }
 
 
