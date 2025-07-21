@@ -21,7 +21,7 @@ using namespace cms::alpakatools;
       {
         float key = data[i];
         int j = i - 1;
-        while (j >= 0 && data[j] > key) 
+        while (j >= 0 && data[j] < key) 
         {
           data[j + 1] = data[j];
           --j;
