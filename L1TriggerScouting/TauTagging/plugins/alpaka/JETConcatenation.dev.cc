@@ -34,10 +34,10 @@ using namespace cms::alpakatools;
 class JETConcatenationKernel 
 {
 public: 
-  //template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
-    ALPAKA_FN_ACC void operator()(const Acc1D& acc, PFCandidateCollection::ConstView pf, CLUEsteringCollection::ConstView clusters) const 
+    template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
+    ALPAKA_FN_ACC void operator()(const TAcc& acc, PFCandidateCollection::ConstView pf, CLUEsteringCollection::ConstView clusters) const 
     {
-      printf("Starting kernel"); 
+      printf("Starting kernel\n"); 
 
       /*//using Dim = alpaka::Dim<TAcc>;
         //using Idx = alpaka::Idx<TAcc>;
@@ -111,17 +111,6 @@ public:
     }
 
 };
-
-/*
-class JETConcatenationKernel {
-  public:
-    ALPAKA_FN_ACC void operator()(const Acc1D& acc, PFCandidateCollection::ConstView pf_candidates, CLUEsteringCollection::ConstView clue_collection) const {
-      if (once_per_grid(acc)) {
-        printf("ConcatenateKernel OK\n");
-      }
-    }
-  };
-  */
 
 
 // Function to launch the kernel
