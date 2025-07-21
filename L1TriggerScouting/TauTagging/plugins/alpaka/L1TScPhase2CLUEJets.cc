@@ -153,7 +153,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     alpaka::wait(event.queue()); */
     //JETConcatenation concat; 
 
-    Concatenate(event.queue(), pf, clusters, numJets);
+    Concatenate<Acc1D>(event.queue(), pf, clusters, numJets);
 
 
 

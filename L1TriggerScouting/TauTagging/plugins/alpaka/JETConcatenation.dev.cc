@@ -34,7 +34,7 @@ using namespace cms::alpakatools;
 class JETConcatenationKernel 
 {
 public: 
-    template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
+    template <typename TAcc>
     ALPAKA_FN_ACC void operator()(const TAcc& acc, PFCandidateCollection::ConstView pf, CLUEsteringCollection::ConstView clusters) const 
     {
       printf("Starting kernel\n"); 
@@ -114,14 +114,14 @@ public:
 
 
 // Function to launch the kernel
-//template <typename TAcc>
+template <typename TAcc>
 void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const int Nclusters) 
 {
   uint32_t threads_per_block = Nclusters;
   uint32_t blocks_per_grid = 1;        
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
   //alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
-  alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
+  alpaka::exec<TAcc>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
   //alpaka::wait(queue);
 }
 
