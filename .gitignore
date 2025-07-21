@@ -21,6 +21,7 @@ __init__.py
 
 #ignore mac specific file
 .DS_Store
+.sys.v#*
 
 # external libs 
 CLUEstering/

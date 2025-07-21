@@ -5,7 +5,9 @@
 #include "DataFormats/Common/interface/DeviceProduct.h"
 #include "DataFormats/L1ScoutingSoA/interface/CLUEsteringSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/PFCandidateSoA.h"
+#include "DataFormats/L1ScoutingSoA/interface/TauClustersSoA.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/CLUEsteringCollection.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/PFCandidateCollection.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/TauClusterCollection.h"
 
 #endif  // DataFormats_L1ScoutingSoA_src_alpaka_classes_cuda_h
