@@ -14,7 +14,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
 using namespace cms::alpakatools;
 
 
-/*// Insertion sorting
+// Insertion sorting
     ALPAKA_FN_ACC void insertionSort(float* data, int N)
     {
       for (int i = 1; i < N; ++i) 
@@ -28,7 +28,7 @@ using namespace cms::alpakatools;
         }
         data[j + 1] = key;
       }
-    }*/
+    }
 
 
 class JETConcatenationKernel 
@@ -39,7 +39,7 @@ public:
     {
       printf("Starting kernel\n"); 
 
-      /*//using Dim = alpaka::Dim<TAcc>;
+      //using Dim = alpaka::Dim<TAcc>;
         //using Idx = alpaka::Idx<TAcc>;
       using Vec = alpaka::Vec<alpaka::Dim<TAcc>, alpaka::Idx<TAcc> >;
       using Vec1D = alpaka::Vec<alpaka::DimInt<1u>, alpaka::Idx<TAcc> >;
@@ -63,7 +63,7 @@ public:
           // Accessing the column "cluster" by its name as a finctional
           auto a = clusters.cluster()[i]; 
 
-          printf("Cluster number %f", a); 
+          printf("Cluster number %u\n", a); 
 
           if (a > numJets) numJets = a; 
         }
@@ -104,9 +104,9 @@ public:
 
         for (uint32_t i = 0; i < N; i++) 
         {
-          printf("Pt value %f", pt[i]); 
+          printf("Pt value %f\n", pt[i]); 
         }
-*/
+
 
     }
 
