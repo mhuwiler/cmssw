@@ -38,7 +38,7 @@ from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
 from RecoMET.METProducers.pfMet_cfi import pfMet
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '141X_mcRun4_realistic_v3', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '141X_mcRun4_realistic_v3', '') #141X_mcRun4_realistic_v3
 
 # NOTE: we need this to avoid saving the stubs
 process.l1tTrackSelectionProducer.processSimulatedTracks = False
@@ -445,33 +445,67 @@ def addPixelRecHits():
 def addPixelInformation(): 
     process.globalHitProducer = cms.EDProducer("GlobalPositionProducer",
         src = cms.InputTag('pixelTracks'),  # or MiniAOD source
-        geometry = cms.ESInputTag("", "TrackerGeometry")
+        geometry = cms.ESInputTag("141X_mcRun4_realistic_v3", "TrackerGeometry"),
+        name = cms.string("globalPosition")
     )
+    #from PhysicsTools.NanoAOD.valueMapVarProducer_cfi import ValueMapVarReader
     process.globalX = cms.EDProducer("ValueMapVarReader",
         name = cms.string("globalX"),
-        src = cms.InputTag("GlobalPoint"),      # e.g. reco::Tracks
+        src = cms.InputTag("pixelRecHits"),      # e.g. reco::Tracks
         value = cms.InputTag("globalPositionProducer", "x")  # the ValueMap
+    )
+    process.globalPosTable = cms.EDProducer("SimpleFlatTableProducer",
+        src = cms.InputTag("globalX"),
+        name = cms.string("recHitGlobal"),
+        doc = cms.string("Global position"),
+        singleton = cms.bool(False),
+        extension = cms.bool(False),
+        variables = cms.PSet(
+            x = Var("userFloat('globalX')", float, doc="x position in global coordinate system", precision=8),
+        )
     )
     #from PhysicsTools.NanoAOD.simpleFlatTableProducer_cfi import SimpleFlatTableProducer
     process.pixelRecHitsGlobalPosTable = cms.EDProducer("SimpleTrackingRecHitAdditionalsProducer",
-        src = cms.InputTag("globalPositionProducer"),
+        src = cms.InputTag("pixelTracks"),
         cut = cms.string(""), #we should not filter after pruning
         name = cms.string("pixelRecHitsGlobalPos"),
         doc = cms.string("pixel RecHits global positions recomputed with GlobalRecHitProducer"),
         singleton = cms.bool(False), # the number of entries is variable
-        extension = cms.bool(False), # this is the extension table for the AK8 constituents
-        variables = cms.PSet(
-            globalX = Var("x()", float, doc="x position in global coordinate system",precision=8),
+        extension = cms.bool(True), # this is the extension table for the AK8 constituents
+        #variables = cms.PSet(
+            #globalX = Var("x()", float, doc="x position in global coordinate system",precision=8),
             #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
             #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
             #localX = Var("localPosition().x()", float, doc="x position in local coordinate system",precision=8),
             #localY = Var("localPosition().y()", float, doc="y position in local coordinate system",precision=8),
             #localZ = Var("localPosition().z()", float, doc="z position in local coordinate system",precision=8),
+            externalTypedVariables = cms.PSet(
+                x = cms.PSet(
+                    expr = cms.string("globalPosition().x()"),
+                    src = cms.InputTag("globalHitProducer"),  # the ValueMap<float>
+                    type = cms.string("float"),
+                    doc = cms.string("Global X position"),
+                    precision = cms.int32(10)
+                )
+           # )
 
         ),
     )
-    process.extraPFStuff.add(process.pixelRecHitsGlobalPosTable)
-    addPixelRecHits()
+    process.extraPFStuff.add(process.globalHitProducer,process.pixelRecHitsGlobalPosTable)
+
+    #process.extraPFStuff.add(process.globalHitProducer,process.globalX) #,process.globalPosTable
+    #addPixelRecHits()
+    """
+    process.load("FWCore/MessageService/MessageLogger_cfi")
+
+    process.MessageLogger.cerr.enable = False
+    process.MessageLogger.files.eventContent = cms.untracked.PSet(
+        threshold = cms.untracked.string('INFO'),
+        INFO = cms.untracked.PSet(limit = cms.untracked.int32(0)),
+        printEventContent = cms.untracked.PSet(limit = cms.untracked.int32(-1))
+    )
+    printContent()
+    """
 
 def old(): 
     process.pixelRecHitsGlobalPosTable = cms.EDProducer("SimpleRecHitGlobalPosFlatTableProducer",
