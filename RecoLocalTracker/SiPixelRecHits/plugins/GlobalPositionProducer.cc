@@ -84,6 +84,7 @@ GlobalPositionProducer::GlobalPositionProducer(const edm::ParameterSet& iConfig)
   produces<edm::ValueMap<GlobalPoint>>();
 
   geomToken_ = esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>();
+  token_ = consumes(iConfig.getParameter<edm::InputTag>("src"));
 
   /* Examples
   

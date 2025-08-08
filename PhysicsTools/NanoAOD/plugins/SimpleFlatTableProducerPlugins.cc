@@ -13,6 +13,8 @@ typedef SimpleFlatTableProducer<TrackingRecHit> SimpleRecHitFlatTableProducer;
 #include "DataFormats/Common/interface/ValueMap.h"
 typedef SimpleFlatTableProducer<edm::ValueMap<GlobalPoint> > SimpleRecHitGlobalPosFlatTableProducer; 
 
+typedef SimpleTypedExternalFlatTableProducer<TrackingRecHit, GlobalPoint> SimpleTrackingRecHitAdditionalsProducer;
+
 #include "DataFormats/JetReco/interface/PFJet.h"
 typedef SimpleFlatTableProducer<reco::PFJet> SimplePFJetFlatTableProducer;
 
@@ -70,3 +72,4 @@ DEFINE_FWK_MODULE(SimpleOnlineLuminosityFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleBeamspotFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRecHitFlatTableProducer);
 DEFINE_FWK_MODULE(SimpleRecHitGlobalPosFlatTableProducer);
+DEFINE_FWK_MODULE(SimpleTrackingRecHitAdditionalsProducer);
