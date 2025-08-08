@@ -447,6 +447,51 @@ def addPixelInformation():
         src = cms.InputTag('pixelTracks'),  # or MiniAOD source
         geometry = cms.ESInputTag("", "TrackerGeometry")
     )
+    process.globalX = cms.EDProducer("ValueMapVarReader",
+        name = cms.string("globalX"),
+        src = cms.InputTag("GlobalPoint"),      # e.g. reco::Tracks
+        value = cms.InputTag("globalPositionProducer", "x")  # the ValueMap
+    )
+    #from PhysicsTools.NanoAOD.simpleFlatTableProducer_cfi import SimpleFlatTableProducer
+    process.pixelRecHitsGlobalPosTable = cms.EDProducer("SimpleTrackingRecHitAdditionalsProducer",
+        src = cms.InputTag("globalPositionProducer"),
+        cut = cms.string(""), #we should not filter after pruning
+        name = cms.string("pixelRecHitsGlobalPos"),
+        doc = cms.string("pixel RecHits global positions recomputed with GlobalRecHitProducer"),
+        singleton = cms.bool(False), # the number of entries is variable
+        extension = cms.bool(False), # this is the extension table for the AK8 constituents
+        variables = cms.PSet(
+            globalX = Var("x()", float, doc="x position in global coordinate system",precision=8),
+            #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
+            #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
+            #localX = Var("localPosition().x()", float, doc="x position in local coordinate system",precision=8),
+            #localY = Var("localPosition().y()", float, doc="y position in local coordinate system",precision=8),
+            #localZ = Var("localPosition().z()", float, doc="z position in local coordinate system",precision=8),
+
+        ),
+    )
+    process.extraPFStuff.add(process.pixelRecHitsGlobalPosTable)
+    addPixelRecHits()
+
+def old(): 
+    process.pixelRecHitsGlobalPosTable = cms.EDProducer("SimpleRecHitGlobalPosFlatTableProducer",
+        src = cms.InputTag("pixelTracks"),
+        cut = cms.string(""), #we should not filter after pruning
+        name = cms.string("pixelRecHitsGlobalPos"),
+        doc = cms.string("pixel RecHits global positions recomputed with GlobalRecHitProducer"),
+        singleton = cms.bool(False), # the number of entries is variable
+        extension = cms.bool(False), # this is the extension table for the AK8 constituents
+        variables = cms.PSet(
+            globalX = Var("get().x()", float, doc="x position in global coordinate system",precision=8),
+            #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
+            #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
+            #localX = Var("localPosition().x()", float, doc="x position in local coordinate system",precision=8),
+            #localY = Var("localPosition().y()", float, doc="y position in local coordinate system",precision=8),
+            #localZ = Var("localPosition().z()", float, doc="z position in local coordinate system",precision=8),
+
+        ),
+    )
+    process.extraPFStuff.add(process.pixelRecHitsGlobalPosTable)
     addPixelRecHits()
 
 def addGenPi(pdgs=[211]):
