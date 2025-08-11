@@ -69,7 +69,7 @@ process.TauClusters = l1sc_L1TScPhase2CLUEJets_alpaka(
     ),
     pf = "PFCandidatesAoSToSoA", 
     clusters = "CLUETaus",
-    debug = cms.untracked.bool(args.debug)
+    debug = cms.untracked.bool(True)
 )
 
 # schedule the modules
