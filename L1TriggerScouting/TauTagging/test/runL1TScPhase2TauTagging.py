@@ -4,7 +4,8 @@ from L1TriggerScouting.TauTagging.options_cff import args
 from L1TriggerScouting.TauTagging.modules import (
     l1sc_L1TScPhase2PFCandidatesAoSToSoA_alpaka,
     l1sc_L1TScPhase2CLUETaus_alpaka,
-    l1sc_L1TScPhase2CLUEJets_alpaka
+    l1sc_L1TScPhase2CLUEJets_alpaka,
+    l1sc_L1TScPhase2DirectInference_alpaka
 )
 
 
@@ -38,7 +39,8 @@ process.PFCandidatesAoSToSoA = l1sc_L1TScPhase2PFCandidatesAoSToSoA_alpaka(
         backend = cms.untracked.string(args.backend)
     ),
     src = cms.InputTag("l1tLayer1Extended", "PF", "L1Dump"),
-    debug = cms.untracked.bool(args.debug)
+    verbose = cms.untracked.bool(args.verbose),
+    verboseLevel = cms.untracked.int32(args.verboseLevel)
 )
 # CLUEstering
 process.CLUETaus = l1sc_L1TScPhase2CLUETaus_alpaka(
@@ -46,7 +48,19 @@ process.CLUETaus = l1sc_L1TScPhase2CLUETaus_alpaka(
         backend = cms.untracked.string(args.backend)
     ),
     src = "PFCandidatesAoSToSoA",
-    debug = cms.untracked.bool(args.debug)
+    wrapCoords = cms.bool(args.wrapCoords),
+    verbose = cms.untracked.bool(args.verbose),
+    verboseLevel = cms.untracked.int32(args.verboseLevel)
+)
+# ML inference
+process.DirectInference = l1sc_L1TScPhase2DirectInference_alpaka(
+    alpaka = cms.untracked.PSet(
+        backend = cms.untracked.string(args.backend)
+    ),
+    srcPFCandidates = "PFCandidatesAoSToSoA",
+    srcCLUETaus = "CLUETaus",
+    verbose = cms.untracked.bool(args.verbose),
+    verboseLevel = cms.untracked.int32(args.verboseLevel)
 )
 # Jet layout for tagger
 process.TauClusters = l1sc_L1TScPhase2CLUEJets_alpaka(
@@ -62,7 +76,8 @@ process.TauClusters = l1sc_L1TScPhase2CLUEJets_alpaka(
 process.path = cms.Path(
     process.PFCandidatesAoSToSoA +
     process.CLUETaus +
-    process.TauClusters
+    process.TauClusters +
+    process.DirectInference
 )
 
 # do not needed - framework will run path automatically if there is only one 
