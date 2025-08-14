@@ -76,8 +76,8 @@ process.TauClusters = l1sc_L1TScPhase2CLUEJets_alpaka(
 process.path = cms.Path(
     process.PFCandidatesAoSToSoA +
     process.CLUETaus +
-    process.TauClusters +
-    process.DirectInference
+    process.TauClusters #+
+    #process.DirectInference
 )
 
 # do not needed - framework will run path automatically if there is only one 
