@@ -38,7 +38,7 @@ from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
 from RecoMET.METProducers.pfMet_cfi import pfMet
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '141X_mcRun4_realistic_v3', '') #141X_mcRun4_realistic_v3
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T31', '') #141X_mcRun4_realistic_v3 131X_mcRun4_realistic_v9 131X_mcRun4_realistic_v5 auto:phase2_realistic_T21
 
 # NOTE: we need this to avoid saving the stubs
 process.l1tTrackSelectionProducer.processSimulatedTracks = False
