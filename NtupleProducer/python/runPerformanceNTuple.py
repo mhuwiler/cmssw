@@ -33,12 +33,13 @@ process.load('SimCalorimetry.HGCalSimProducers.hgcalDigitizer_cfi') # needed for
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load('RecoMET.Configuration.GenMETParticles_cff')
 process.load('RecoMET.METProducers.genMetTrue_cfi')
+process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
 from RecoMET.METProducers.pfMet_cfi import pfMet
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T31', '') #141X_mcRun4_realistic_v3 131X_mcRun4_realistic_v9 131X_mcRun4_realistic_v5 auto:phase2_realistic_T21
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T21', '') #141X_mcRun4_realistic_v3 131X_mcRun4_realistic_v9 131X_mcRun4_realistic_v5 auto:phase2_realistic_T21
 
 # NOTE: we need this to avoid saving the stubs
 process.l1tTrackSelectionProducer.processSimulatedTracks = False
@@ -57,7 +58,11 @@ process.extraPFStuff = cms.Task(
         process.l1tVertexFinderEmulator,
         process.L1TLayer1TaskInputsTask,
         process.L1TLayer1Task,
-        process.L1TLayer2EGTask)
+        process.L1TLayer2EGTask, 
+        process.pixeltrackerlocalrecoTask,
+        process.offlineBeamSpotTask,
+        process.siPixelClusterShapeCachePreSplitting,
+        process.recopixelvertexingTask)
 
 process.centralGen = cms.EDFilter("CandPtrSelector", src = cms.InputTag("genParticlesForMETAllVisible"), cut = cms.string("abs(eta) < 2.4"))
 process.barrelGen = cms.EDFilter("CandPtrSelector", src = cms.InputTag("genParticlesForMETAllVisible"), cut = cms.string("abs(eta) < 1.5"))
@@ -424,7 +429,7 @@ def addPixelRecHits():
         singleton = cms.bool(False), # the number of entries is variable
         extension = cms.bool(False), # this is the extension table for the AK8 constituents
         variables = cms.PSet(
-            #globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
+            globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
             #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
             #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
             localX = Var("localPosition().x()", float, doc="x position in local coordinate system",precision=8),
@@ -445,7 +450,7 @@ def addPixelRecHits():
 def addPixelInformation(): 
     process.globalHitProducer = cms.EDProducer("GlobalPositionProducer",
         src = cms.InputTag('pixelTracks'),  # or MiniAOD source
-        geometry = cms.ESInputTag("141X_mcRun4_realistic_v3", "TrackerGeometry"),
+        geometry = cms.ESInputTag("", "TrackerGeometry"),
         name = cms.string("globalPosition")
     )
     #from PhysicsTools.NanoAOD.valueMapVarProducer_cfi import ValueMapVarReader
@@ -506,6 +511,34 @@ def addPixelInformation():
     )
     printContent()
     """
+
+
+def addPixels(): 
+    process.pixelRecHitsTable = cms.EDProducer("SimpleRecHitFlatTableProducer",
+        src = cms.InputTag("pixelTracks"),
+        cut = cms.string(""), #we should not filter after pruning
+        name = cms.string("pixelRecHits"),
+        doc = cms.string("pixel RecHits reconstructed with the Heterogeneous reconstruction at the HLT"),
+        singleton = cms.bool(False), # the number of entries is variable
+        extension = cms.bool(False), # this is the extension table for the AK8 constituents
+        variables = cms.PSet(
+            #globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
+            #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
+            #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
+            localX = Var("localPosition().x()", float, doc="x position in local coordinate system",precision=8),
+            localY = Var("localPosition().y()", float, doc="y position in local coordinate system",precision=8),
+            localZ = Var("localPosition().z()", float, doc="z position in local coordinate system",precision=8),
+            hasGlobal = Var("hasPositionAndError()", float, doc="bool telling if global positions are saved",precision=8),
+            #localX = Var("charge", int, doc="charge", precision=8),
+            detId = Var("geographicalId().rawId()", int, doc="DetId of the module the hit is located in", precision=8),
+            #dxy = Var("dxy", float, doc="transverse displacement", precision=8),
+            #chi2 = Var("chi2", float, doc="track fit chi2", precision=8),
+            #ndof = Var("ndof", float, doc="track fit ndof", precision=8),
+
+        ),
+    )
+    process.extraPFStuff.add(process.pixelRecHitsTable)
+
 
 def old(): 
     process.pixelRecHitsGlobalPosTable = cms.EDProducer("SimpleRecHitGlobalPosFlatTableProducer",
@@ -920,4 +953,5 @@ def saveGenCands():
 
 addPixelTracks()
 addPixelRecHits()
-addPixelInformation()
+#addPixelInformation()
+#addPixels()
