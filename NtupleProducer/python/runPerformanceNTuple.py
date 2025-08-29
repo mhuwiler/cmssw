@@ -429,7 +429,7 @@ def addPixelRecHits():
         singleton = cms.bool(False), # the number of entries is variable
         extension = cms.bool(False), # this is the extension table for the AK8 constituents
         variables = cms.PSet(
-            globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
+            #globalX = Var("globalPosition().x()", float, doc="x position in global coordinate system",precision=8),
             #globalY = Var("globalPosition().y()", float, doc="y position in global coordinate system",precision=8),
             #globalZ = Var("phi", float, doc="phi coordinate",precision=8),
             localX = Var("localPosition().x()", float, doc="x position in local coordinate system",precision=8),
@@ -450,7 +450,7 @@ def addPixelRecHits():
 def addPixelInformation(): 
     process.globalHitProducer = cms.EDProducer("GlobalPositionProducer",
         src = cms.InputTag('pixelTracks'),  # or MiniAOD source
-        geometry = cms.ESInputTag("", "TrackerGeometry"),
+        geometry = cms.ESInputTag("TrackerGeometry", "T31"),
         name = cms.string("globalPosition")
     )
     #from PhysicsTools.NanoAOD.valueMapVarProducer_cfi import ValueMapVarReader
