@@ -24,8 +24,8 @@ process.source = cms.Source("PoolSource",
             "drop l1tTkPrimaryVertexs_*_*_*")
 )
 
-process.load('Configuration.Geometry.GeometryExtended2026D95Reco_cff')
-process.load('Configuration.Geometry.GeometryExtended2026D95_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D110Reco_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D110_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
 process.load('SimCalorimetry.HcalTrigPrimProducers.hcaltpdigi_cff') # needed to read HCal TPs
@@ -38,7 +38,7 @@ from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
 from RecoMET.METProducers.pfMet_cfi import pfMet
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T21', '') #141X_mcRun4_realistic_v3 131X_mcRun4_realistic_v9 131X_mcRun4_realistic_v5 auto:phase2_realistic_T21
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', '') #141X_mcRun4_realistic_v3 131X_mcRun4_realistic_v9 131X_mcRun4_realistic_v5 auto:phase2_realistic_T21 140X_mcRun4_realistic_v4
 
 # NOTE: we need this to avoid saving the stubs
 process.l1tTrackSelectionProducer.processSimulatedTracks = False
@@ -444,8 +444,8 @@ def addPixelRecHits():
 
 def addPixelInformation(): 
     process.globalHitProducer = cms.EDProducer("GlobalPositionProducer",
-        src = cms.InputTag('pixelTracks'),  # or MiniAOD source
-        geometry = cms.ESInputTag("TrackerGeometry", "T31"),
+        src = cms.InputTag('hltPhase2PixelTracks'),  # or MiniAOD source
+        geometry = cms.ESInputTag("TrackerGeometry", ""),
         name = cms.string("globalPosition")
     )
     #from PhysicsTools.NanoAOD.valueMapVarProducer_cfi import ValueMapVarReader
@@ -920,4 +920,4 @@ def saveGenCands():
 
 addPixelTracks()
 addPixelRecHits()
-#addPixelInformation()
+addPixelInformation()
