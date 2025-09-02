@@ -25,7 +25,11 @@ process.load('L1Trigger.L1THGCal.hgcalTriggerPrimitives_cff')
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
         # 'file:/data/cerminar/Phase2Spring23DIGIRECOMiniAOD/DoubleElectron_FlatPt-1To100-gun/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_131X_mcRun4_realistic_v5-v1/c699a773-9875-40c9-83b7-5a3c27f90bfd.root',
-        '/store/mc/Phase2Spring23DIGIRECOMiniAOD/DYToLL_M-10To50_TuneCP5_14TeV-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_131X_mcRun4_realistic_v5-v1/30000/0289a719-64c3-4b16-871f-da7db9a8ac88.root',        '/store/mc/Phase2Spring23DIGIRECOMiniAOD/MinBias_TuneCP5_14TeV-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_131X_mcRun4_realistic_v5-v1/30002/3b44d52d-1807-4a4f-9b9b-19466303a741.root',
+        #'/store/mc/Phase2Spring23DIGIRECOMiniAOD/DYToLL_M-10To50_TuneCP5_14TeV-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_131X_mcRun4_realistic_v5-v1/30000/0289a719-64c3-4b16-871f-da7db9a8ac88.root',        '/store/mc/Phase2Spring23DIGIRECOMiniAOD/MinBias_TuneCP5_14TeV-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_131X_mcRun4_realistic_v5-v1/30002/3b44d52d-1807-4a4f-9b9b-19466303a741.root',
+        #"/store/mc/Phase2Spring23DIGIRECOMiniAOD/GluGluToHHTo4B_node_SM_TuneCP5_14TeV-amcatnlo-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_L1TFix_Trk1GeV_131X_mcRun4_realistic_v9-v1/2810000/caa1edf7-0c9e-40b0-b78b-5b40974aa3f9.root",
+        #"/store/mc/Phase2Spring23DIGIRECOMiniAOD/GluGluToHHTo4B_node_SM_TuneCP5_14TeV-amcatnlo-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_L1TFix_Trk1GeV_131X_mcRun4_realistic_v9-v1/2810000/d4e647d6-8a1f-4ed7-ad1e-d436f2dbccfc.root"
+        "/store/mc/Phase2Spring24DIGIRECOMiniAOD/GluGluToHHTo4B_node_SM_TuneCP5_14TeV-amcatnlo-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_AllTP_140X_mcRun4_realistic_v4-v1/2560000/a0c4f1cd-129a-483d-a2d3-f1d66de8f39c.root",
+        "/store/mc/Phase2Spring24DIGIRECOMiniAOD/GluGluToHHTo4B_node_SM_TuneCP5_14TeV-amcatnlo-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_AllTP_140X_mcRun4_realistic_v4-v1/2560000/76137d6b-6bf4-402c-b299-163d1d1f5358.root"
 ),
 
     inputCommands = cms.untracked.vstring(
@@ -68,7 +72,7 @@ process.p.associate(process.PFInputsTask)
 process.p.associate(process.SimL1EmulatorTask)
 
 process.out = cms.OutputModule("PoolOutputModule",
-        fileName = cms.untracked.string("inputs131X.root"),
+        fileName = cms.untracked.string("inputs131X_HH4b.root"),
         outputCommands = cms.untracked.vstring("drop *",
             # --- GEN
             "keep *_genParticles_*_*",
