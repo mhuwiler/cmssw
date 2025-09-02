@@ -387,7 +387,7 @@ def addGen(pdgs):
 
 def addPixelTracks():
     process.pixelTracksTable = cms.EDProducer("SimpleTrackFlatTableProducer",
-        src = cms.InputTag("pixelTracks"),
+        src = cms.InputTag("hltPhase2PixelTracks"),
         cut = cms.string(""), #we should not filter after pruning
         name = cms.string("pixelTracks"),
         doc = cms.string("pixelTracks reconstructed with the Heterogeneous reconstruction at the HLT"),
@@ -417,7 +417,7 @@ def addPixelTracks():
 
 def addPixelRecHits():
     process.pixelRecHitsTable = cms.EDProducer("SimpleRecHitFlatTableProducer",
-        src = cms.InputTag("pixelTracks"),
+        src = cms.InputTag("hltPhase2PixelTracks"),
         cut = cms.string(""), #we should not filter after pruning
         name = cms.string("pixelRecHits"),
         doc = cms.string("pixel RecHits reconstructed with the Heterogeneous reconstruction at the HLT"),
