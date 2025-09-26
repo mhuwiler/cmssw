@@ -90,13 +90,16 @@ public:
         float pt[N] = {-999}; 
         float *currentpt = pt; 
 
-        for (int i = 0; i < pf.metadata().size(); i++) 
+        for (int i = 0; i < pf.metadata().size(); i++) // make this copy in parallel for GPU
         {
-          if (clusters.cluster()[i] == idx) //copy the PF locally
+          printf("i value %d, idx: %d\n", i, idx); 
+          //if (clusters.cluster()[i] == idx) //copy the PF locally
           {
             *ind = i; 
             ind++; 
+             printf("Pt value %f\n", pf.pt()[i]); 
             *currentpt = pf.pt()[i]; 
+            printf("Pt value %f\n", *currentpt); 
             currentpt++; 
           }
         }
@@ -109,7 +112,8 @@ public:
 
         // Sorting the arrays according to pT 
         insertionSort(pt, indices, N); 
-
+        printf("Sorted:\n"); 
+        
         for (uint32_t i = 0; i < N; i++) 
         {
           printf("Pt value %f, index: %d\n", pt[i], indices[i]); 
