@@ -7,6 +7,7 @@
 #include "L1TriggerScouting/TauTagging/interface/alpaka/JETConcatenation.h"
 //#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Utils.h"
 //#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
+#include "DataFormats/L1ScoutingSoA/interface/alpaka/TauClusterCollection.h"
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
@@ -38,7 +39,7 @@ class JETConcatenationKernel
 {
 public: 
     template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc> > >
-    ALPAKA_FN_ACC void operator()(const TAcc& acc, PFCandidateCollection::ConstView pf, CLUEsteringCollection::ConstView clusters) const 
+    ALPAKA_FN_ACC void operator()(const TAcc& acc, PFCandidateCollection::ConstView pf, CLUEsteringCollection::ConstView clusters, TauClusterCollection::View jets) const 
     {
       printf("Starting kernel\n"); 
 
@@ -117,6 +118,10 @@ public:
           printf("Pt value %f, index: %d\n", pt[i], indices[i]); 
         }
 
+        jets.pt()[0] = 1.; 
+
+
+
 
     }
 
@@ -125,13 +130,13 @@ public:
 
 // Function to launch the kernel
 //template <typename TAcc>
-void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, const int Nclusters) 
+void Concatenate(Queue& queue, const PFCandidateCollection& pf, const CLUEsteringCollection& clusters, TauClusterCollection& jets, const int Nclusters) 
 {
   uint32_t threads_per_block = Nclusters;
   uint32_t blocks_per_grid = 1;        
   auto grid = make_workdiv<Acc1D>(blocks_per_grid, threads_per_block);
   //alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
-  alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view()); //, Nclusters
+  alpaka::exec<Acc1D>(queue, grid, JETConcatenationKernel{}, pf.const_view(), clusters.const_view(), jets.view()); //, Nclusters
   //alpaka::wait(queue);
 }
 

@@ -153,15 +153,19 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
     alpaka::wait(event.queue()); */
     //JETConcatenation concat; 
 
-    Concatenate(event.queue(), pf, clusters, numJets);
-
-
-
     int nConst = batchsize*numJets; 
 
     // creating the output collection
     auto jets = TauClusterCollection(nConst, event.queue());
     jets.zeroInitialise(event.queue());
+
+    Concatenate(event.queue(), pf, clusters, jets, numJets);
+
+
+
+    //event.put(std::move(jets)); 
+
+    
   
   }
 
