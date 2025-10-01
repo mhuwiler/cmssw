@@ -120,6 +120,14 @@ public:
 
         jets.pt()[0] = 1.; 
 
+        std::copy(pt, pt+N, &jets.pt()[0]); 
+
+        printf("Output collection:\n"); 
+        for (uint32_t i = 0; i < N; i++) 
+        {
+          printf("Pt value %f\n", jets.pt()[i]); 
+        }
+
 
 
 
