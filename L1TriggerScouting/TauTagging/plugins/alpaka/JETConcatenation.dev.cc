@@ -97,9 +97,7 @@ public:
           {
             *ind = i; 
             ind++; 
-             printf("Pt value %f\n", pf.pt()[i]); 
             *currentpt = pf.pt()[i]; 
-            printf("Pt value %f\n", *currentpt); 
             currentpt++; 
           }
         }
