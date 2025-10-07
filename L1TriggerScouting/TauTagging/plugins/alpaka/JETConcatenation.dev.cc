@@ -83,6 +83,7 @@ public:
 
 
         const int N = 128; 
+        const int P = 16; 
 
         // Extracting the indices and the corresponding pt values from the PF candidates matching the cluster number
         int indices[N] = {-1}; 
@@ -120,12 +121,19 @@ public:
 
         jets.pt()[0] = 1.; 
 
-        std::copy(pt, pt+N, &jets.pt()[0]); 
+        std::copy(pt, pt+P, &jets.pt()[0]); 
 
         printf("Output collection:\n"); 
-        for (uint32_t i = 0; i < N; i++) 
+        for (uint32_t i = 0; i < P; i++) 
         {
           printf("Pt value %f\n", jets.pt()[i]); 
+        }
+
+
+        // Filling the other data columns
+        for (int i=0; i<P; i++) 
+        {
+          jets.deltaeta()[i] = pf.eta()[indices[i]]; 
         }
 
 
