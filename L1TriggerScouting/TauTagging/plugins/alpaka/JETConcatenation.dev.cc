@@ -35,10 +35,6 @@ using namespace cms::alpakatools;
     }
 
 
-    ALPAKA_FN_ACC void to4vector(float pt, float eta, float phi, float fmass) 
-    {
-     
-    }
 
     ALPAKA_FN_ACC void jet4vector(float* pt, float* eta, float* phi, float* mass, int N, float& jetPt, float& jetEta, float& jetPhi, float& jetE) 
     {
@@ -47,8 +43,10 @@ using namespace cms::alpakatools;
       float z = 0; 
       float E = 0; 
       
+      // Looping over the jet constituents
       for (int i=0; i<N; i++) 
       {
+        // Computing the 4 momentum components for each candidate
         float currentPt = pt[i]; 
 
         float px = currentPt * cos(phi[i]); 
@@ -57,6 +55,7 @@ using namespace cms::alpakatools;
 
         float pz = currentPt * sinh(eta[i]); 
 
+        // Add to the jet 4 momentum 
         x += px; 
         y += py; 
         z += pz; 
@@ -65,6 +64,7 @@ using namespace cms::alpakatools;
 
       }
 
+      // Convert the jet 4 momentum back to pt eta phi m base
       jetPt = sqrt(x*x + y*y); 
       jetEta = 0.; 
       if (jetPt > 0.) jetEta = asinh(z/jetPt); // 0.5 * log((p + pz_sum) / (p - pz_sum))
@@ -188,8 +188,11 @@ public:
         printf("Pt value %f, eta: %f, phi: %f, m: %f\n", jetpt, jeteta, jetphi, jetm); 
 
 
-        for (int i=0; i<P; i++) {
+        // Updating the output jet delta eta and delta phi with the actual difference
+        for (int i=0; i<P; i++) 
+        {
           jets.deltaeta()[i] -= jeteta; 
+          jets.deltaphi()[i] -= jetphi; 
         }
 
 
