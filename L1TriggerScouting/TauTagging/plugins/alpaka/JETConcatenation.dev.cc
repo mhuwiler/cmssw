@@ -35,6 +35,45 @@ using namespace cms::alpakatools;
     }
 
 
+    ALPAKA_FN_ACC void to4vector(float pt, float eta, float phi, float fmass) 
+    {
+     
+    }
+
+    ALPAKA_FN_ACC void jet4vector(float* pt, float* eta, float* phi, float* mass, int N, float& jetPt, float& jetEta, float& jetPhi, float& jetE) 
+    {
+      float x = 0; 
+      float y = 0; 
+      float z = 0; 
+      float E = 0; 
+      
+      for (int i=0; i<N; i++) 
+      {
+        float currentPt = pt[i]; 
+
+        float px = currentPt * cos(phi[i]); 
+
+        float py = currentPt * sin(phi[i]); 
+
+        float pz = currentPt * sinh(eta[i]); 
+
+        x += px; 
+        y += py; 
+        z += pz; 
+
+        E += sqrt(px*px + py*py + pz*pz + mass[i]*mass[i]); 
+
+      }
+
+      jetPt = sqrt(x*x + y*y); 
+      jetEta = 0.; 
+      if (jetPt > 0.) jetEta = asinh(z/jetPt); // 0.5 * log((p + pz_sum) / (p - pz_sum))
+      jetPhi = atan2(y, x); 
+
+
+    }
+
+
 class JETConcatenationKernel 
 {
 public: 
@@ -131,13 +170,26 @@ public:
 
 
         // Filling the other data columns
+        float masses[P]; 
         for (int i=0; i<P; i++) 
         {
           jets.deltaeta()[i] = pf.eta()[indices[i]]; 
-          jets.deltaphi()[i] = pf.phi()[indices[i]];
-          jets.vz()[i] = pf.z0()[indices[i]];
-          //jets.dxy()[i] = pf.dxy()[indices[i]];
-          //jets.pdgid()[i] = pf.pdgid()[indices[i]];
+          jets.deltaphi()[i] = pf.phi()[indices[i]]; 
+          jets.vz()[i] = pf.z0()[indices[i]]; 
+          //jets.dxy()[i] = pf.dxy()[indices[i]]; 
+          //jets.pdgid()[i] = pf.pdgid()[indices[i]]; 
+          masses[i] = 0.139; //pf.mass()[i]; 
+        }
+
+        // Compute the jet 4 momentum
+        float jetpt, jeteta, jetphi, jetm = 0; 
+        jet4vector(jets.pt(), jets.deltaeta(), jets.deltaphi(), masses, P, jetpt, jeteta, jetphi, jetm); 
+
+        printf("Pt value %f, eta: %f, phi: %f, m: %f\n", jetpt, jeteta, jetphi, jetm); 
+
+
+        for (int i=0; i<P; i++) {
+          jets.deltaeta()[i] -= jeteta; 
         }
 
 
