@@ -134,6 +134,10 @@ public:
         for (int i=0; i<P; i++) 
         {
           jets.deltaeta()[i] = pf.eta()[indices[i]]; 
+          jets.deltaphi()[i] = pf.phi()[indices[i]];
+          jets.vz()[i] = pf.z0()[indices[i]];
+          //jets.dxy()[i] = pf.dxy()[indices[i]];
+          //jets.pdgid()[i] = pf.pdgid()[indices[i]];
         }
 
 
