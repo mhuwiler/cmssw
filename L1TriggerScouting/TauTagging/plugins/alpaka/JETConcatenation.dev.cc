@@ -8,6 +8,7 @@
 //#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Utils.h"
 //#include "L1TriggerScouting/JetClusteringTagging/interface/alpaka/Clustering.h"
 #include "DataFormats/L1ScoutingSoA/interface/alpaka/TauClusterCollection.h"
+#include <math.h>
 
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::l1sc {
@@ -16,7 +17,7 @@ using namespace cms::alpakatools;
 
 
 // Insertion sorting
-    ALPAKA_FN_ACC void insertionSort(float* data, int* spectator, int N)
+    ALPAKA_FN_ACC void insertionSort(float* data, int* spectator, int N) // TODO: use radic sort in CMSSW
     {
       for (int i = 1; i < N; ++i) 
       {
@@ -36,7 +37,7 @@ using namespace cms::alpakatools;
 
 
 
-    ALPAKA_FN_ACC void jet4vector(float* pt, float* eta, float* phi, float* mass, int N, float& jetPt, float& jetEta, float& jetPhi, float& jetE) 
+    ALPAKA_FN_ACC void jet4vector(const float* pt, const float* eta, const float* phi, const float* mass, int N, float& jetPt, float& jetEta, float& jetPhi, float& jetE) 
     {
       float x = 0; 
       float y = 0; 
@@ -173,17 +174,32 @@ public:
         float masses[P]; 
         for (int i=0; i<P; i++) 
         {
+          printf("eta initial %f\n", pf.eta()[indices[i]]); 
           jets.deltaeta()[i] = pf.eta()[indices[i]]; 
+          printf("delta eta %f\n", jets.deltaeta()[i]); 
+          printf("phi initial %f\n", pf.phi()[indices[i]]); 
           jets.deltaphi()[i] = pf.phi()[indices[i]]; 
+          printf("delta phi %f\n", jets.deltaphi()[i]); 
           jets.vz()[i] = pf.z0()[indices[i]]; 
           //jets.dxy()[i] = pf.dxy()[indices[i]]; 
           //jets.pdgid()[i] = pf.pdgid()[indices[i]]; 
           masses[i] = 0.139; //pf.mass()[i]; 
+          printf("delta phi before %f\n", jets.deltaphi()[i]); 
+        }
+
+        for (int i=0; i<P; i++) // TODO: run with address sanitizer
+        {
+          printf("delta phi before %f\n", jets.deltaphi()[i]); 
         }
 
         // Compute the jet 4 momentum
         float jetpt, jeteta, jetphi, jetm = 0; 
         jet4vector(jets.pt(), jets.deltaeta(), jets.deltaphi(), masses, P, jetpt, jeteta, jetphi, jetm); 
+
+        for (int i=0; i<P; i++) 
+        {
+          printf("delta phi after %f\n", jets.deltaphi()[i]); 
+        }
 
         printf("Pt value %f, eta: %f, phi: %f, m: %f\n", jetpt, jeteta, jetphi, jetm); 
 
@@ -191,8 +207,17 @@ public:
         // Updating the output jet delta eta and delta phi with the actual difference
         for (int i=0; i<P; i++) 
         {
+          printf("initial eta value %f\n", jets.deltaeta()[i]); 
           jets.deltaeta()[i] -= jeteta; 
-          jets.deltaphi()[i] -= jetphi; 
+          printf("eta value %f\n", jets.deltaeta()[i]); 
+          jets.deltaphi()[i] = fmod((jets.deltaphi()[i] -jetphi + M_PI), (2. * M_PI))- M_PI; 
+          printf("eta value after %f\n", jets.deltaeta()[i]); 
+        }
+
+        printf("Output collection eta phi:\n"); 
+        for (uint32_t i = 0; i < P; i++) 
+        {
+          printf("Pt value %f, eta: %f, phi: %f\n", jets.pt()[i], jets.deltaeta()[i], jets.deltaphi()[i]); 
         }
 
 
